@@ -2,7 +2,6 @@
 
 
 #include "MainCharacter.h"
-
 #include "DrawDebugHelpers.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
@@ -13,21 +12,19 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "Item.h"
+#include "Weapon.h"
 #include "Components/WidgetComponent.h"
 
 
 // Sets default values
 AMainCharacter::AMainCharacter() :
-	bItemHudCurrentlyDisplayed(false),
+	
 	CurrentlyLookingAtItem(nullptr),
 	bAiming(false),
 	CameraDefaultFOV(0.f),
-
-	// Camera Field of View Defaults 
 	CameraZoomedFOV(40.f),
 	ZoomInterpSpeed(20.f),
 	CrosshairSpreadMultiplier(0.f),
-	//Crosshair Spread Factors
 	CrosshairVelocityFactor(0.f),
 	CrosshairInAirFactor(0.f),
 	CrosshairAimFactor(0.f),
@@ -35,17 +32,9 @@ AMainCharacter::AMainCharacter() :
 	bFiringBullet(false),
 	ShootTimeDuration(0.1f),
 	bShouldTraceForItems(false),
-	// Base Turn Rates
-	BaseTurnRate(15.f),
-	BaseLookUpRate(15.f),
-	// Turn Rates For Aiming / Not Aiming 
-	HipTurnRate(35.f),
-	HipLookUpRate(35.f),
-	AimingTurnRate(10.f),
-	AimingLookUpRate(10.f),
-	//Automatic Fire Rate in Seconds
-	bShouldFire(true),
-	AutoFireRate(0.15f)
+	CameraInterpDistance(250.f),
+	CameraInterpElevation(65.f),
+	bShouldFire(true)
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -79,6 +68,28 @@ AMainCharacter::AMainCharacter() :
 float AMainCharacter::GetCrosshairSpreadMultiplier() const
 {
 	return CrosshairSpreadMultiplier;
+}
+
+FVector AMainCharacter::GetCameraInterpLocation()
+{
+	const FVector CameraWorldLocation = FollowCamera->GetComponentLocation();
+
+	const FVector CameraForwardDirection = FollowCamera->GetForwardVector();
+
+	return CameraWorldLocation + (CameraForwardDirection * CameraInterpDistance) + (FVector{0,0, CameraInterpElevation});
+
+
+	
+}
+
+void AMainCharacter::GetPickupItem(AItem* Item)
+{
+	auto Weapon = Cast<AWeapon>(Item);
+	if(Weapon)
+	{
+		SwapWeapon(Weapon);
+	}
+	
 }
 
 FRotator AMainCharacter::GetLookAtRotationYaw(FVector Target) const
@@ -158,6 +169,10 @@ void AMainCharacter::BeginPlay()
 		CameraDefaultFOV = FollowCamera->FieldOfView;
 		CameraCurrentFOV = CameraDefaultFOV;
 	}
+
+	//Spawns the default weapon and equips it 
+	EquipWeapon(SpawnDefaultWeapon());
+	
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -360,35 +375,100 @@ void AMainCharacter::TraceForItems()
 		TraceUnderCrosshairs(ItemTraceResult, HitResultHolder);
 		if (ItemTraceResult.bBlockingHit)
 		{
-			AItem* HitItem = Cast<AItem>(ItemTraceResult.GetActor());
-			if (HitItem && HitItem->GetPickupWidget())
+			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
+			if (TraceHitItem && TraceHitItem->GetPickupWidget())
 			{
-				if (CurrentlyLookingAtItem != HitItem)
-                    {
-                        CurrentlyLookingAtItem = HitItem;
-                    }
 
-				if (CurrentlyLookingAtItem->bItemInRangeForHUD() && !bItemHudCurrentlyDisplayed)
-				{
-					
-					CurrentlyLookingAtItem->GetPickupWidget()->SetVisibility(true);
-					bItemHudCurrentlyDisplayed = true;
-				}
+				TraceHitItem->GetPickupWidget()->SetVisibility(true);
 				
-			}
+				if (TraceHitItemLastFrame)
+				{
+					if (TraceHitItem != TraceHitItemLastFrame)
+					{
+						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+					}
+				}
 
-			else if (CurrentlyLookingAtItem != nullptr && CurrentlyLookingAtItem != HitItem)
+				TraceHitItemLastFrame = TraceHitItem;
+			}
+			else if (TraceHitItemLastFrame)
 			{
-				CurrentlyLookingAtItem->GetPickupWidget()->SetVisibility(false);
-				bItemHudCurrentlyDisplayed = false;
-				CurrentlyLookingAtItem = nullptr;
+				TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
 			}
 		}
 	}
-	else
+}
+
+AWeapon* AMainCharacter::SpawnDefaultWeapon()
+{
+	if(DefaultWeaponClass)
 	{
-		CurrentlyLookingAtItem = nullptr;
+		return GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass);
 	}
+	return nullptr;
+}
+
+void AMainCharacter::EquipWeapon(AWeapon* WeaponToEquip)
+{
+	if(WeaponToEquip)
+	{
+		
+	
+		
+
+		/*Creates the Skeletal Mesh Socket pointer to spawn the weapon into, called
+		 *"RightHandSocket" in Unreal Engine
+		 */
+		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
+		if(HandSocket)
+		{
+			if(HandSocket)
+			{
+				HandSocket->AttachActor(WeaponToEquip, GetMesh());
+			}
+		}
+		// Assigning the Equipped Weapon Variable
+		EquippedWeapon = WeaponToEquip;
+
+		/* Ensuring that once the weapon is equipped, it doesn't interfere with other
+		 *Collision channels	*/
+		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
+	}
+}
+
+void AMainCharacter::DropWeapon()
+{
+	if(EquippedWeapon)
+	{
+		FDetachmentTransformRules DTR(EDetachmentRule::KeepWorld, true);
+		EquippedWeapon->GetItemMesh()->DetachFromComponent(DTR);
+
+		EquippedWeapon->SetItemState(EItemState::EIS_Falling);
+		EquippedWeapon->ThrowWeapon();
+		
+	}
+}
+
+void AMainCharacter::TestButtonPressed()
+{
+	if(TraceHitItem)
+	{
+		TraceHitItem->StartItemCurve(this);
+	}
+	
+}
+
+void AMainCharacter::TestButtonReleased()
+{
+	
+}
+
+void AMainCharacter::SwapWeapon(AWeapon* WeaponToSwap)
+{
+	DropWeapon();
+	EquipWeapon(WeaponToSwap);
+	TraceHitItem = nullptr;
+	TraceHitItemLastFrame = nullptr;
 }
 
 // Called every frame
@@ -427,6 +507,9 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AMainCharacter::AimingButtonPressed);
 	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AMainCharacter::AimingButtonReleased);
+
+	PlayerInputComponent->BindAction("Test", IE_Pressed, this, &AMainCharacter::TestButtonPressed);
+	PlayerInputComponent->BindAction("Test", IE_Released, this, &AMainCharacter::TestButtonReleased);
 }
 
 void AMainCharacter::FireButtonPressed()

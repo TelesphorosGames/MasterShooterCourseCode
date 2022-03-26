@@ -23,12 +23,13 @@ public:
 
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 
-	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return CurrentlyLookingAtItem ; }
+	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return TraceHitItemLastFrame ; }
 
-	UFUNCTION(BlueprintCallable)
-	float GetCrosshairSpreadMultiplier() const;
 	
-	bool bItemHudCurrentlyDisplayed;
+
+	
+	
+
 	
 private:
 
@@ -109,10 +110,30 @@ private:
 	bool bShouldTraceForItems;
 
 	int8 OverlappedItemCount;
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	AItem* TraceHitItemLastFrame;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	class AWeapon* EquippedWeapon;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	TSubclassOf<AWeapon> DefaultWeaponClass;
 
 
-	
+	/*The item being hit by our line trace in TraceForItems() at any given time
+	 * COULD BE NULL */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	AItem* TraceHitItem;
+
+
+	/* Distance outward from the camera in the forward direction used for determining where items
+	* are shown to the player */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	float CameraInterpDistance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	float CameraInterpElevation;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -138,6 +159,20 @@ protected:
 	void FinishCrosshairBulletFire();
 	void TraceForItems();
 
+	AWeapon* SpawnDefaultWeapon();
+
+	void EquipWeapon(AWeapon* WeaponToEquip);
+
+
+	// Used to let a weapon in our hands drop to the ground
+	void DropWeapon();
+
+	void TestButtonPressed();
+	void TestButtonReleased();
+
+	
+	void SwapWeapon(AWeapon* WeaponToSwap);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -151,16 +186,16 @@ public:
 	float BaseLookUpRate = 15.f ;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float HipTurnRate;
+	float HipTurnRate = 35.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float HipLookUpRate;
+	float HipLookUpRate = 35.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float AimingTurnRate;
+	float AimingTurnRate = 10.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float AimingLookUpRate;
+	float AimingLookUpRate = 10.f;
 
 	bool bFireButtonPressed;
 
@@ -168,7 +203,7 @@ public:
 
 	FTimerHandle AutoFireTimer;
 
-	float AutoFireRate;
+	float AutoFireRate = 0.15f;
 
 	void FireButtonPressed();
 
@@ -184,9 +219,11 @@ public:
 
 	void IncrementOverlappedItemCount(int8 Amount);
 
-	
-	
-	
 
+	UFUNCTION(BlueprintCallable)
+	float GetCrosshairSpreadMultiplier() const;
+
+	FVector GetCameraInterpLocation();
 	
+	void GetPickupItem(AItem* Item);
 };
