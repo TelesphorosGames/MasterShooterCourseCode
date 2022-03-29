@@ -6,6 +6,19 @@
 #include "GameFramework/Character.h"
 #include "MainCharacter.generated.h"
 
+UENUM(BlueprintType)
+enum class EAmmoType : uint8
+{
+	EAT_Pistol UMETA(DisplayName = "PistolAmmo"),
+	EAT_AssaultRifle UMETA(DisplayName = "AssaultRifleAmmo"),
+	EAT_LongRangeRifle UMETA(DisplayName = "LongRangeRifle"),
+
+	
+	EAT_MAX UMETA(DisplayName = "DefaultMax"),
+	
+};
+
+
 UCLASS()
 class MASTERSHOOTERCOURSE_API AMainCharacter : public ACharacter
 {
@@ -134,6 +147,17 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
 	float CameraInterpElevation;
+
+	// This TMAP will keep track of ammo types and their associated integer amount
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
+	TMap<EAmmoType, int32> AmmoMap;
+
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
+	int32 StartingPistolAmmo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
+	int32 StartingAssaultRifleAmmo;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -172,6 +196,9 @@ protected:
 
 	
 	void SwapWeapon(AWeapon* WeaponToSwap);
+
+	
+	void InitializeAmmoMap();
 
 public:	
 	// Called every frame

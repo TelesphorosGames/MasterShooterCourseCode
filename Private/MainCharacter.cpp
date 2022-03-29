@@ -34,7 +34,9 @@ AMainCharacter::AMainCharacter() :
 	bShouldTraceForItems(false),
 	CameraInterpDistance(250.f),
 	CameraInterpElevation(65.f),
-	bShouldFire(true)
+	bShouldFire(true),
+	StartingPistolAmmo(85),
+	StartingAssaultRifleAmmo(120)
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -258,6 +260,7 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 	}
 	else
 	{
+		
 	}
 	FHitResult WeaponTraceHit;
 
@@ -469,6 +472,12 @@ void AMainCharacter::SwapWeapon(AWeapon* WeaponToSwap)
 	EquipWeapon(WeaponToSwap);
 	TraceHitItem = nullptr;
 	TraceHitItemLastFrame = nullptr;
+}
+
+void AMainCharacter::InitializeAmmoMap()
+{
+	AmmoMap.Add(EAmmoType::EAT_Pistol, StartingPistolAmmo);
+	AmmoMap.Add(EAmmoType::EAT_AssaultRifle, StartingAssaultRifleAmmo);
 }
 
 // Called every frame
