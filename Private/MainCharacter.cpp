@@ -34,10 +34,11 @@ AMainCharacter::AMainCharacter() :
 	bShouldTraceForItems(false),
 	CameraInterpDistance(250.f),
 	CameraInterpElevation(65.f),
-	bShouldFire(true),
 	StartingPistolAmmo(85),
-	StartingAssaultRifleAmmo(120)
-
+	StartingAssaultRifleAmmo(120),
+	CombatState(ECombatState::ECS_Unoccupied),
+    bShouldFire(true)
+	
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -177,23 +178,25 @@ void AMainCharacter::BeginPlay()
 	
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AMainCharacter::FireWeapon()
+void AMainCharacter::PlayGunFireSound()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
 	if (FireSound)
 	{
 		UGameplayStatics::PlaySound2D(GetWorld(), FireSound);
 	}
-	const USkeletalMeshSocket* BarrelSocket = GetMesh()->GetSocketByName("BarrelSocket");
+}
+
+void AMainCharacter::FireOneBullet()
+{
+	const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
 	if (BarrelSocket)
 	{
-		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(GetMesh());
+		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(EquippedWeapon->GetItemMesh());
 		if (MuzzleFlash)
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
 		}
-
+            
 		FVector BeamEnd;
 		const bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
 		if (bBeamEnd)
@@ -209,6 +212,49 @@ void AMainCharacter::FireWeapon()
 				Beam->SetVectorParameter(FName("Target"), BeamEnd);
 			}
 		}
+	}
+}
+
+void AMainCharacter::PlayRecoilAnimation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && HipFireMontage)
+	{
+		AnimInstance->Montage_Play(HipFireMontage);
+		AnimInstance->Montage_JumpToSection(FName("StartFire"));
+	}
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AMainCharacter::FireWeapon()
+{
+	if(EquippedWeapon == nullptr) return;
+	if(CombatState != ECombatState::ECS_Unoccupied) return;
+
+	if(WeaponHasAmmo())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
+
+		//Handles the sound for the gunfire
+		PlayGunFireSound();
+		
+		// Handles Bullet and finds where it hits
+		FireOneBullet();
+
+		//Play Animation for Recoil
+		PlayRecoilAnimation();	
+
+		// Handles Crosshair Animation
+		StartCrossHairBulletFire();
+        
+		// Decrease Ammo in weapon by 1
+		EquippedWeapon->DecreaseAmmo();
+
+		// Handles the Timer attached to the gun's fire rate
+		StartFireTimer();
+	}
+}
+	
 
 		//**
 		// FHitResult FireHitResult;
@@ -237,16 +283,8 @@ void AMainCharacter::FireWeapon()
 		// 	Beam->SetVectorParameter(FName("Target"), BeamEndPoint);
 		// }
 
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance && HipFireMontage)
-		{
-			AnimInstance->Montage_Play(HipFireMontage);
-			AnimInstance->Montage_JumpToSection(FName("StartFire"));
-		}
-	}
+		
 
-	StartCrossHairBulletFire();
-}
 
 bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
 {
@@ -480,6 +518,14 @@ void AMainCharacter::InitializeAmmoMap()
 	AmmoMap.Add(EAmmoType::EAT_AssaultRifle, StartingAssaultRifleAmmo);
 }
 
+bool AMainCharacter::WeaponHasAmmo()
+{
+	if(EquippedWeapon == nullptr) return false;
+	
+	return (EquippedWeapon->GetAmmo()>0);	
+	
+}
+
 // Called every frame
 void AMainCharacter::Tick(float DeltaTime)
 {
@@ -524,7 +570,8 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 void AMainCharacter::FireButtonPressed()
 {
 	bFireButtonPressed = true;
-	StartFireTimer();
+	FireWeapon();
+	
 }
 
 void AMainCharacter::FireButtonReleased()
@@ -534,21 +581,30 @@ void AMainCharacter::FireButtonReleased()
 
 void AMainCharacter::StartFireTimer()
 {
-	if (bShouldFire)
-	{
-		FireWeapon();
-		bShouldFire = false;
-		GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, AutoFireRate);
-	}
+
+	CombatState=ECombatState::ECS_FireTimerInProgress;
+	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, AutoFireRate);
+	
 }
 
 void AMainCharacter::AutoFireReset()
 {
-	bShouldFire = true;
-	if (bFireButtonPressed)
+	CombatState=ECombatState::ECS_Unoccupied;
+	
+	if(WeaponHasAmmo())
 	{
-		StartFireTimer();
+		
+		if (bFireButtonPressed)
+        	{
+        		FireWeapon();
+        	}
+		
 	}
+	else
+	{
+		// TODO : RELOAD FUNCTION
+	}
+	
 }
 
 bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBeamEnd)

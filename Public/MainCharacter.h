@@ -18,6 +18,16 @@ enum class EAmmoType : uint8
 	
 };
 
+UENUM(BlueprintType)
+enum class ECombatState : uint8
+{
+	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
+	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
+	ECS_ReloadingState UMETA(DisplayName = "Reloading"),
+
+	ECS_MAX UMETA(DisplayName = "DefaultMax"),
+};
+
 
 UCLASS()
 class MASTERSHOOTERCOURSE_API AMainCharacter : public ACharacter
@@ -117,6 +127,8 @@ private:
 	float CrosshairShootingFactor;
 
 	bool bFiringBullet;
+
+	// Timer for determining how long to spread the crosshairs apart on the screen when firing a shot
 	FTimerHandle CrosshairShootTimer;
 	float ShootTimeDuration;
 
@@ -158,10 +170,18 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
 	int32 StartingAssaultRifleAmmo;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
+	ECombatState CombatState;
+
+
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void PlayGunFireSound();
+	void FireOneBullet();
+	void PlayRecoilAnimation();
 
 	// Called When Fire Button is pressed
 	void FireWeapon();
@@ -199,6 +219,9 @@ protected:
 
 	
 	void InitializeAmmoMap();
+
+	
+	bool WeaponHasAmmo();
 
 public:	
 	// Called every frame
