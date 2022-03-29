@@ -246,8 +246,9 @@ void AItem::FinishInterping()
 	if(CharacterPointer)
 	{
 			CharacterPointer->GetPickupItem(this);
+		
 	}
-
+	SetActorScale3D(FVector(1.f));
 }
 
 // Called every frame
@@ -332,8 +333,13 @@ void AItem::ItemInterp(float DeltaTime)
 
 		SetActorRotation(ItemRotation, ETeleportType::TeleportPhysics);
 
-		
 
+		if(ItemScaleCurve)
+		{
+			const float ScaleCurveValue = ItemScaleCurve->GetFloatValue(ElapsedTime);
+			SetActorScale3D(FVector(ScaleCurveValue, ScaleCurveValue, ScaleCurveValue));
+		}
+		
 
 
 	}

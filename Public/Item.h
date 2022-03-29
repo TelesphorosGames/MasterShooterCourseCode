@@ -162,6 +162,9 @@ private:
 	//Initial Yaw Offset between camera and item, used to ensure item rotation faces camera
 	// Used to match the camera's Yaw direction
 	float InterpInitialYawOffset = 0.f ;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	UCurveFloat* ItemScaleCurve;
 	
 };
 
