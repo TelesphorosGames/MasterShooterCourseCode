@@ -3,20 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AmmoType.h"
 #include "GameFramework/Character.h"
+
+
 #include "MainCharacter.generated.h"
 
-UENUM(BlueprintType)
-enum class EAmmoType : uint8
-{
-	EAT_Pistol UMETA(DisplayName = "PistolAmmo"),
-	EAT_AssaultRifle UMETA(DisplayName = "AssaultRifleAmmo"),
-	EAT_LongRangeRifle UMETA(DisplayName = "LongRangeRifle"),
 
-	
-	EAT_MAX UMETA(DisplayName = "DefaultMax"),
-	
-};
 
 UENUM(BlueprintType)
 enum class ECombatState : uint8
@@ -174,6 +167,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
 	ECombatState CombatState;
 
+	// Animation montage for reloading the different weapons
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	UAnimMontage* ReloadMontage;
+
 
 	
 protected:
@@ -223,6 +220,15 @@ protected:
 	
 	bool WeaponHasAmmo();
 
+	// Bound to Reload key, handles all functions attached to input
+	void ReloadButtonPressed();
+
+	// Handles reloading of weapon ammo
+	void ReloadWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

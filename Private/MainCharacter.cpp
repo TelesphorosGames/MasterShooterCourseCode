@@ -526,6 +526,37 @@ bool AMainCharacter::WeaponHasAmmo()
 	
 }
 
+void AMainCharacter::ReloadButtonPressed()
+{
+	ReloadWeapon();
+}
+
+void AMainCharacter::ReloadWeapon()
+{
+	if(CombatState!= ECombatState::ECS_Unoccupied) return;
+
+	// TODO: Check if we have correct type of ammo, bool function CarryingAmmo
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && ReloadMontage)
+	{
+		AnimInstance->Montage_Play(ReloadMontage);
+		//TODO : Switch on equipped weapon type
+		AnimInstance->Montage_JumpToSection(FName("Reload_SMG"));
+	}
+	
+	
+
+	
+}
+
+void AMainCharacter::FinishReloading()
+{
+	// TODO: Update AmmoMap
+
+	CombatState = ECombatState::ECS_Unoccupied;
+}
+
 // Called every frame
 void AMainCharacter::Tick(float DeltaTime)
 {
@@ -565,6 +596,8 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("Test", IE_Pressed, this, &AMainCharacter::TestButtonPressed);
 	PlayerInputComponent->BindAction("Test", IE_Released, this, &AMainCharacter::TestButtonReleased);
+
+	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMainCharacter::ReloadButtonPressed);
 }
 
 void AMainCharacter::FireButtonPressed()
@@ -602,7 +635,7 @@ void AMainCharacter::AutoFireReset()
 	}
 	else
 	{
-		// TODO : RELOAD FUNCTION
+		ReloadWeapon();
 	}
 	
 }
