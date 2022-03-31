@@ -37,7 +37,8 @@ AMainCharacter::AMainCharacter() :
 	StartingPistolAmmo(85),
 	StartingAssaultRifleAmmo(120),
 	CombatState(ECombatState::ECS_Unoccupied),
-	bShouldFire(true)
+	bShouldFire(true),
+	MovementStatus(EMovementStatus::EMS_Standing)
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -623,6 +624,18 @@ void AMainCharacter::ReleaseClip()
 	
 }
 
+void AMainCharacter::ToggleSit()
+{
+	if(MovementStatus==EMovementStatus::EMS_Standing)
+	{
+		MovementStatus=EMovementStatus::EMS_Sitting;
+	}
+	else if(MovementStatus==EMovementStatus::EMS_Sitting)
+	{
+		MovementStatus=EMovementStatus::EMS_Standing;
+	}
+}
+
 // Called every frame
 void AMainCharacter::Tick(float DeltaTime)
 {
@@ -662,6 +675,8 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 	PlayerInputComponent->BindAction("Test", IE_Pressed, this, &AMainCharacter::TestButtonPressed);
 	PlayerInputComponent->BindAction("Test", IE_Released, this, &AMainCharacter::TestButtonReleased);
+
+	PlayerInputComponent->BindAction("Sit", IE_Pressed, this, &AMainCharacter::ToggleSit);
 
 	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMainCharacter::ReloadButtonPressed);
 }

@@ -21,6 +21,16 @@ enum class ECombatState : uint8
 	ECS_MAX UMETA(DisplayName = "DefaultMax"),
 };
 
+UENUM()
+enum class EMovementStatus : uint8
+{
+	EMS_Idle UMETA(DisplayName = "Idle"),
+	EMS_Standing UMETA(DisplayName = "Standing"),
+	EMS_Sitting UMETA(DisplayName = "Sitting"),
+
+	EMS_MAX UMETA(DisplayName = "DefaultMax"),
+};
+
 
 UCLASS()
 class MASTERSHOOTERCOURSE_API AMainCharacter : public ACharacter
@@ -30,30 +40,19 @@ class MASTERSHOOTERCOURSE_API AMainCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AMainCharacter();
-
+	// Public getters and setters:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
 	FORCEINLINE bool GetAiming() const { return bAiming ; }
-
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
-
 	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return TraceHitItemLastFrame ; }
 
-	
 
-	
-	
-
-	
 private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My Stuff | Camera", meta = (AllowPrivateAccess = "true"))
 	AItem* CurrentlyLookingAtItem;
-
-
-
+	
 	//  Declares a Spring Arm Component called CameraBoom and gives it its unreal engine property values, allowing us to access it from Blueprints
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My Stuff | Camera", meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraBoom;
@@ -92,7 +91,6 @@ private:
 	virtual void StopJumping() override;
 
 	
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
 	bool bAiming;
 
@@ -179,7 +177,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
 	USceneComponent* HandClipLocation;
 
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
+	EMovementStatus MovementStatus;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -246,6 +245,8 @@ protected:
 	void GrabClip();
 	UFUNCTION(BlueprintCallable)
 	void ReleaseClip();
+
+	void ToggleSit();
 
 	
 	

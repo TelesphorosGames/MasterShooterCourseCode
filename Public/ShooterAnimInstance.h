@@ -20,9 +20,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void UpdateAnimationProperties(float DeltaTime);
 	
-	
+	UShooterAnimInstance();
 	
 	virtual void NativeInitializeAnimation() override;
+
+protected:
+
+	// Will handle the turning in place variables
+	void TurnInPlace();
 
 
 private:
@@ -53,6 +58,18 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	bool bAiming;
 
-	
-	
+	// Yaw of the Character This frame - used for turn in place anims
+	float CharacterYaw;
+
+	//Yaw of the character in the previous frame - used for turn in place anims
+	float CharacterYawLastFrame;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	float RootYawOffset;
+
+	//Rotation Curve Value used for turn in place anims
+	float RotationCurve;
+
+	// Rotation Curve value held from last frame used for turn in place anims
+	float RotationCurveLastFrame;
 };
