@@ -72,4 +72,12 @@ private:
 
 	// Rotation Curve value held from last frame used for turn in place anims
 	float RotationCurveLastFrame;
+
+	// Our character's pitch value used for aim offset
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	float Pitch;
+
+	// Used to re-center our character when reloading to prevent an animation offset for the gun's clip
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	bool bReloading;
 };

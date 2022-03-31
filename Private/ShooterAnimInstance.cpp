@@ -17,8 +17,12 @@ UShooterAnimInstance::UShooterAnimInstance() :
 	bAiming(false),
 	CharacterYaw(0.f),
 	CharacterYawLastFrame(0.f),
-	RootYawOffset(0.f)
+	RootYawOffset(0.f),
+	Pitch(0.f),
+	bReloading(false)
+	
 {
+	
 }
 
 
@@ -30,8 +34,10 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	}
 	if (ShooterCharacter)
 	{
-		//Get later Speed of Character from Velocity - speed from falling is not taken into account
+		bReloading = ShooterCharacter->GetCombatState()==ECombatState::ECS_ReloadingState;
 
+
+		//Get later Speed of Character from Velocity - speed from falling is not taken into account
 		FVector Velocity = ShooterCharacter->GetVelocity();
 		Velocity.Z = 0.f;
 		Speed = Velocity.Size();
@@ -89,6 +95,11 @@ void UShooterAnimInstance::NativeInitializeAnimation()
 void UShooterAnimInstance::TurnInPlace()
 {
 	if (ShooterCharacter == nullptr) return;
+
+	Pitch = ShooterCharacter->GetBaseAimRotation().Pitch;
+	
+
+	
 	if (Speed > 0)
 	{
 		RootYawOffset = 0.f;
@@ -139,8 +150,4 @@ void UShooterAnimInstance::TurnInPlace()
 		}
 	}
 }
-
-// Test Comment
-
-//Approved comments
 

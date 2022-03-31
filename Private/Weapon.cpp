@@ -6,11 +6,11 @@
 AWeapon::AWeapon():
 ThrowWeaponTime(0.7f),
 bFalling(false),
+AmmoCount(30),
+MagazineSize(30),
 WeaponType(EWeaponType::EWT_SubmachineGun),
 AmmoType(EAmmoType::EAT_Pistol),
 ReloadMontageSection(FName(TEXT("Reload_SMG"))),
-AmmoCount(30),
-MagazineSize(30),
 ClipBoneName(TEXT("smg_clip"))
 
 {
@@ -75,4 +75,9 @@ void AWeapon::StopFalling()
 {
 	bFalling=false;
 	SetItemState(EItemState::EIS_OnGround);
+}
+
+bool AWeapon::ClipIsFull()
+{
+	return AmmoCount >= MagazineSize;
 }

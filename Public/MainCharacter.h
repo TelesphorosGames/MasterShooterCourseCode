@@ -45,7 +45,8 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool GetAiming() const { return bAiming ; }
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
-	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return TraceHitItemLastFrame ; }
+	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return TraceHitItemLastFrame; }
+	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 
 
 private:

@@ -47,7 +47,7 @@ public:
 	// Called from main character class to reload the magazine 
 	void ReloadAmmo(int32 AmmoAmount);
 	
-	
+	bool ClipIsFull();
 
 protected:
 	
@@ -88,4 +88,7 @@ private:
 	// True while clip is being moved during reload
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
 	bool bMovingClip;
+
+	
+	
 };

@@ -37,8 +37,8 @@ AMainCharacter::AMainCharacter() :
 	StartingPistolAmmo(85),
 	StartingAssaultRifleAmmo(120),
 	CombatState(ECombatState::ECS_Unoccupied),
-	bShouldFire(true),
-	MovementStatus(EMovementStatus::EMS_Standing)
+	MovementStatus(EMovementStatus::EMS_Standing),
+	bShouldFire(true)
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -539,7 +539,7 @@ void AMainCharacter::ReloadWeapon()
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
 	if (EquippedWeapon == nullptr) return;
 
-	if (CarryingAmmo())
+	if (CarryingAmmo() && (!EquippedWeapon->ClipIsFull()))
 	{
 		CombatState = ECombatState::ECS_ReloadingState;
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
