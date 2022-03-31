@@ -171,7 +171,15 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
 	UAnimMontage* ReloadMontage;
 
+	//Used to track the gun's clip location during reload so we can attach it to our hand
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
+	FTransform ClipTransform;
 
+	//used to track the hand's location to attach the clip to during reloading
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
+	USceneComponent* HandClipLocation;
+
+	
 	
 protected:
 	// Called when the game starts or when spawned
@@ -223,11 +231,24 @@ protected:
 	// Bound to Reload key, handles all functions attached to input
 	void ReloadButtonPressed();
 
-	// Handles reloading of weapon ammo
+	// Handles reloading animation and refills magazine for gun
 	void ReloadWeapon();
 
+	// Returns true if our character has the equipped weapon's ammo type - used for reloading
+	bool CarryingAmmo();
+	
+	// Will be called when the anim notify is reached to signal the end of the reload animation
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
+
+	// Handle Animations for moving the clip during reloading
+	UFUNCTION(BlueprintCallable)
+	void GrabClip();
+	UFUNCTION(BlueprintCallable)
+	void ReleaseClip();
+
+	
+	
 	
 public:	
 	// Called every frame
@@ -282,4 +303,6 @@ public:
 	FVector GetCameraInterpLocation();
 	
 	void GetPickupItem(AItem* Item);
+
+	
 };

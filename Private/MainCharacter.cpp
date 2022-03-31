@@ -18,7 +18,7 @@
 
 // Sets default values
 AMainCharacter::AMainCharacter() :
-	
+
 	CurrentlyLookingAtItem(nullptr),
 	bAiming(false),
 	CameraDefaultFOV(0.f),
@@ -37,8 +37,8 @@ AMainCharacter::AMainCharacter() :
 	StartingPistolAmmo(85),
 	StartingAssaultRifleAmmo(120),
 	CombatState(ECombatState::ECS_Unoccupied),
-    bShouldFire(true)
-	
+	bShouldFire(true)
+
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -66,6 +66,10 @@ AMainCharacter::AMainCharacter() :
 	GetCharacterMovement()->RotationRate = FRotator{0.f, 540.f, 0.f};
 	GetCharacterMovement()->JumpZVelocity = 600.f;
 	GetCharacterMovement()->AirControl = .2f;
+
+	// Creates the Scene Component used to trach the hand and gun clip movement during reload
+	HandClipLocation = CreateDefaultSubobject<USceneComponent>(TEXT("HandSceneComponent"));
+	
 }
 
 float AMainCharacter::GetCrosshairSpreadMultiplier() const
@@ -79,20 +83,26 @@ FVector AMainCharacter::GetCameraInterpLocation()
 
 	const FVector CameraForwardDirection = FollowCamera->GetForwardVector();
 
-	return CameraWorldLocation + (CameraForwardDirection * CameraInterpDistance) + (FVector{0,0, CameraInterpElevation});
-
-
-	
+	return CameraWorldLocation + (CameraForwardDirection * CameraInterpDistance) + (FVector
+		{0, 0, CameraInterpElevation});
 }
 
 void AMainCharacter::GetPickupItem(AItem* Item)
 {
-	auto Weapon = Cast<AWeapon>(Item);
-	if(Weapon)
+
+
+	if(Item->GetEquipSound())
 	{
-		SwapWeapon(Weapon);
+		UGameplayStatics::PlaySound2D(this,Item->GetEquipSound());
 	}
 	
+	auto Weapon = Cast<AWeapon>(Item);
+	if (Weapon)
+	{
+		SwapWeapon(Weapon);
+		
+	
+	}
 }
 
 FRotator AMainCharacter::GetLookAtRotationYaw(FVector Target) const
@@ -175,7 +185,7 @@ void AMainCharacter::BeginPlay()
 
 	//Spawns the default weapon and equips it 
 	EquipWeapon(SpawnDefaultWeapon());
-	
+	InitializeAmmoMap();
 }
 
 void AMainCharacter::PlayGunFireSound()
@@ -196,7 +206,7 @@ void AMainCharacter::FireOneBullet()
 		{
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
 		}
-            
+
 		FVector BeamEnd;
 		const bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
 		if (bBeamEnd)
@@ -228,25 +238,25 @@ void AMainCharacter::PlayRecoilAnimation()
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AMainCharacter::FireWeapon()
 {
-	if(EquippedWeapon == nullptr) return;
-	if(CombatState != ECombatState::ECS_Unoccupied) return;
+	if (EquippedWeapon == nullptr) return;
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
 
-	if(WeaponHasAmmo())
+	if (WeaponHasAmmo())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
 
 		//Handles the sound for the gunfire
 		PlayGunFireSound();
-		
+
 		// Handles Bullet and finds where it hits
 		FireOneBullet();
 
 		//Play Animation for Recoil
-		PlayRecoilAnimation();	
+		PlayRecoilAnimation();
 
 		// Handles Crosshair Animation
 		StartCrossHairBulletFire();
-        
+
 		// Decrease Ammo in weapon by 1
 		EquippedWeapon->DecreaseAmmo();
 
@@ -254,36 +264,34 @@ void AMainCharacter::FireWeapon()
 		StartFireTimer();
 	}
 }
-	
 
-		//**
-		// FHitResult FireHitResult;
-		// const FVector Start = SocketTransform.GetLocation();
-		// const FQuat Rotation = SocketTransform.GetRotation();
-		// const FVector RoationAxis = Rotation.GetAxisX();
-		// const FVector End = Start + RoationAxis * 50'000;
-		//
-		// FVector BeamEndPoint = End;
-		//
-		// GetWorld()->LineTraceSingleByChannel(FireHitResult, Start, End, ECollisionChannel::ECC_Visibility);
-		// if(FireHitResult.bBlockingHit)
-		// {
-		// 	BeamEndPoint = FireHitResult.Location;
-		// 	DrawDebugLine(GetWorld(), Start, End, FColor::Emerald, false, 3.f);
-		// 	DrawDebugPoint(GetWorld(), FireHitResult.Location, 10, FColor::Red, false, 3.5f);
-		//
-		// 	if(ImpactParticles)
-		// 	{
-		// 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, FireHitResult.Location);
-		// 	}
-		// }
-		// if(BeamParticles)
-		// {
-		// 	UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransform);
-		// 	Beam->SetVectorParameter(FName("Target"), BeamEndPoint);
-		// }
 
-		
+//**
+// FHitResult FireHitResult;
+// const FVector Start = SocketTransform.GetLocation();
+// const FQuat Rotation = SocketTransform.GetRotation();
+// const FVector RoationAxis = Rotation.GetAxisX();
+// const FVector End = Start + RoationAxis * 50'000;
+//
+// FVector BeamEndPoint = End;
+//
+// GetWorld()->LineTraceSingleByChannel(FireHitResult, Start, End, ECollisionChannel::ECC_Visibility);
+// if(FireHitResult.bBlockingHit)
+// {
+// 	BeamEndPoint = FireHitResult.Location;
+// 	DrawDebugLine(GetWorld(), Start, End, FColor::Emerald, false, 3.f);
+// 	DrawDebugPoint(GetWorld(), FireHitResult.Location, 10, FColor::Red, false, 3.5f);
+//
+// 	if(ImpactParticles)
+// 	{
+// 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, FireHitResult.Location);
+// 	}
+// }
+// if(BeamParticles)
+// {
+// 	UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransform);
+// 	Beam->SetVectorParameter(FName("Target"), BeamEndPoint);
+// }
 
 
 bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
@@ -298,7 +306,6 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 	}
 	else
 	{
-		
 	}
 	FHitResult WeaponTraceHit;
 
@@ -419,9 +426,8 @@ void AMainCharacter::TraceForItems()
 			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
 			if (TraceHitItem && TraceHitItem->GetPickupWidget())
 			{
-
 				TraceHitItem->GetPickupWidget()->SetVisibility(true);
-				
+
 				if (TraceHitItemLastFrame)
 				{
 					if (TraceHitItem != TraceHitItemLastFrame)
@@ -442,7 +448,7 @@ void AMainCharacter::TraceForItems()
 
 AWeapon* AMainCharacter::SpawnDefaultWeapon()
 {
-	if(DefaultWeaponClass)
+	if (DefaultWeaponClass)
 	{
 		return GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass);
 	}
@@ -451,19 +457,15 @@ AWeapon* AMainCharacter::SpawnDefaultWeapon()
 
 void AMainCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 {
-	if(WeaponToEquip)
+	if (WeaponToEquip)
 	{
-		
-	
-		
-
 		/*Creates the Skeletal Mesh Socket pointer to spawn the weapon into, called
 		 *"RightHandSocket" in Unreal Engine
 		 */
 		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
-		if(HandSocket)
+		if (HandSocket)
 		{
-			if(HandSocket)
+			if (HandSocket)
 			{
 				HandSocket->AttachActor(WeaponToEquip, GetMesh());
 			}
@@ -479,29 +481,30 @@ void AMainCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 
 void AMainCharacter::DropWeapon()
 {
-	if(EquippedWeapon)
+	if (EquippedWeapon)
 	{
 		FDetachmentTransformRules DTR(EDetachmentRule::KeepWorld, true);
 		EquippedWeapon->GetItemMesh()->DetachFromComponent(DTR);
 
 		EquippedWeapon->SetItemState(EItemState::EIS_Falling);
 		EquippedWeapon->ThrowWeapon();
-		
 	}
 }
 
 void AMainCharacter::TestButtonPressed()
 {
-	if(TraceHitItem)
+	if (TraceHitItem)
 	{
 		TraceHitItem->StartItemCurve(this);
+		if(TraceHitItem->GetPickupSound())
+		{
+			UGameplayStatics::PlaySound2D(this, TraceHitItem->GetPickupSound());
+		}
 	}
-	
 }
 
 void AMainCharacter::TestButtonReleased()
 {
-	
 }
 
 void AMainCharacter::SwapWeapon(AWeapon* WeaponToSwap)
@@ -520,10 +523,9 @@ void AMainCharacter::InitializeAmmoMap()
 
 bool AMainCharacter::WeaponHasAmmo()
 {
-	if(EquippedWeapon == nullptr) return false;
-	
-	return (EquippedWeapon->GetAmmo()>0);	
-	
+	if (EquippedWeapon == nullptr) return false;
+
+	return (EquippedWeapon->GetAmmo() > 0);
 }
 
 void AMainCharacter::ReloadButtonPressed()
@@ -533,28 +535,92 @@ void AMainCharacter::ReloadButtonPressed()
 
 void AMainCharacter::ReloadWeapon()
 {
-	if(CombatState!= ECombatState::ECS_Unoccupied) return;
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+	if (EquippedWeapon == nullptr) return;
 
-	// TODO: Check if we have correct type of ammo, bool function CarryingAmmo
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if(AnimInstance && ReloadMontage)
+	if (CarryingAmmo())
 	{
-		AnimInstance->Montage_Play(ReloadMontage);
-		//TODO : Switch on equipped weapon type
-		AnimInstance->Montage_JumpToSection(FName("Reload_SMG"));
+		CombatState = ECombatState::ECS_ReloadingState;
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && ReloadMontage)
+		{
+			AnimInstance->Montage_Play(ReloadMontage);
+			//TODO : Switch on equipped weapon type
+			AnimInstance->Montage_JumpToSection(EquippedWeapon->GetReloadMontageSection());
+		}
 	}
-	
-	
+}
 
-	
+bool AMainCharacter::CarryingAmmo()
+{
+	if (!EquippedWeapon)return false;
+
+	auto AmmoType = EquippedWeapon->GetAmmoType();
+	if (AmmoMap.Contains(AmmoType))
+	{
+		return AmmoMap[AmmoType] > 0;
+	}
+
+	return false;
 }
 
 void AMainCharacter::FinishReloading()
 {
-	// TODO: Update AmmoMap
-
 	CombatState = ECombatState::ECS_Unoccupied;
+
+	if (EquippedWeapon == nullptr) return;
+	const auto AmmoType = EquippedWeapon->GetAmmoType();
+	if (AmmoMap.Contains(AmmoType))
+	{
+		// Amount of ammo the character is carrrying of the equipped weapon's ammo type
+		int32 CarriedAmmo = AmmoMap[AmmoType];
+
+		// How much space is left in the magazine of equipped weapon
+		const int32 MagazineRoom = EquippedWeapon->GetMagazineSize() - EquippedWeapon->GetAmmo();
+
+		// Reload the Magazine with as much ammo as we can, if we can't fill it all the way up and set our ammo value
+		// in our Ammo Map to 0 
+		if (MagazineRoom > CarriedAmmo)
+		{
+			EquippedWeapon->ReloadAmmo(CarriedAmmo);
+			CarriedAmmo = 0;
+			AmmoMap.Add(AmmoType, CarriedAmmo);
+		}
+		// Fill the magazine and update the value stored in our ammo map to reflect it
+		else
+		{
+			EquippedWeapon->ReloadAmmo(MagazineRoom);
+			CarriedAmmo -= MagazineRoom;
+			AmmoMap.Add(AmmoType, CarriedAmmo);
+		}
+	}
+}
+
+void AMainCharacter::GrabClip()
+{
+	if(EquippedWeapon == nullptr) return;
+
+	int32 ClipBoneIndex = {EquippedWeapon->GetItemMesh()->GetBoneIndex(EquippedWeapon->GetClipBoneName())};
+	
+	ClipTransform = EquippedWeapon->GetItemMesh()->GetBoneTransform(ClipBoneIndex);
+
+
+	FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, true);
+	if(HandClipLocation == nullptr) return;
+
+	
+	HandClipLocation->AttachToComponent(GetMesh(),AttachmentRules, FName(TEXT("LeftHandSocket")));
+	HandClipLocation->SetWorldTransform(ClipTransform);
+	EquippedWeapon->SetMovingClip(true);
+	
+	
+}
+
+void AMainCharacter::ReleaseClip()
+{
+	EquippedWeapon->SetMovingClip(false);
+
+	
 }
 
 // Called every frame
@@ -604,7 +670,6 @@ void AMainCharacter::FireButtonPressed()
 {
 	bFireButtonPressed = true;
 	FireWeapon();
-	
 }
 
 void AMainCharacter::FireButtonReleased()
@@ -614,30 +679,25 @@ void AMainCharacter::FireButtonReleased()
 
 void AMainCharacter::StartFireTimer()
 {
-
-	CombatState=ECombatState::ECS_FireTimerInProgress;
+	CombatState = ECombatState::ECS_FireTimerInProgress;
 	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, AutoFireRate);
-	
 }
 
 void AMainCharacter::AutoFireReset()
 {
-	CombatState=ECombatState::ECS_Unoccupied;
-	
-	if(WeaponHasAmmo())
+	CombatState = ECombatState::ECS_Unoccupied;
+
+	if (WeaponHasAmmo())
 	{
-		
 		if (bFireButtonPressed)
-        	{
-        		FireWeapon();
-        	}
-		
+		{
+			FireWeapon();
+		}
 	}
 	else
 	{
 		ReloadWeapon();
 	}
-	
 }
 
 bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBeamEnd)

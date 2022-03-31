@@ -79,6 +79,8 @@ public:
 	FORCEINLINE class UBoxComponent* GetCollisionBox() const { return CollisionBox ;}
 	FORCEINLINE EItemState GetItemState() const { return ItemState ;}
 	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const {return ItemMesh ;}
+	FORCEINLINE USoundCue* GetPickupSound() const { return PickupSound ;}
+	FORCEINLINE USoundCue* GetEquipSound() const {return EquipSound ;}
 
 	void SetItemState(EItemState State);
 
@@ -163,8 +165,18 @@ private:
 	// Used to match the camera's Yaw direction
 	float InterpInitialYawOffset = 0.f ;
 
+	// Responsible for scaling the item down to 0 when we pick it up
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	UCurveFloat* ItemScaleCurve;
+
+	// Sound that plays when we pick the item up
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	class USoundCue* PickupSound;
+
+	// Sound that plays when we equip the item
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	class USoundCue* EquipSound;
+
 	
 };
 

@@ -6,7 +6,13 @@
 AWeapon::AWeapon():
 ThrowWeaponTime(0.7f),
 bFalling(false),
-WeaponType(EWeaponType::EWT_SubmachineGun)
+WeaponType(EWeaponType::EWT_SubmachineGun),
+AmmoType(EAmmoType::EAT_Pistol),
+ReloadMontageSection(FName(TEXT("Reload_SMG"))),
+AmmoCount(30),
+MagazineSize(30),
+ClipBoneName(TEXT("smg_clip"))
+
 {
 	PrimaryActorTick.bCanEverTick = true;
 }
@@ -57,6 +63,12 @@ void AWeapon::DecreaseAmmo()
 		--AmmoCount;
 	}
 	
+}
+
+void AWeapon::ReloadAmmo(int32 AmmoAmount)
+{
+	checkf(AmmoCount+AmmoAmount <= MagazineSize, TEXT("Attempted To reload with more than magazine capacity "));
+	AmmoCount+=AmmoAmount;
 }
 
 void AWeapon::StopFalling()
