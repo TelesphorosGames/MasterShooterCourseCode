@@ -16,7 +16,7 @@ enum class ECombatState : uint8
 {
 	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
-	ECS_ReloadingState UMETA(DisplayName = "Reloading"),
+	ECS_ReloadingState UMETA(DisplayName = "Reloading"),	
 
 	ECS_MAX UMETA(DisplayName = "DefaultMax"),
 };
@@ -27,6 +27,7 @@ enum class EMovementStatus : uint8
 	EMS_Idle UMETA(DisplayName = "Idle"),
 	EMS_Standing UMETA(DisplayName = "Standing"),
 	EMS_Sitting UMETA(DisplayName = "Sitting"),
+	EMS_Crouching UMETA(DisplayName= "Crouching"),
 
 	EMS_MAX UMETA(DisplayName = "DefaultMax"),
 };
@@ -47,6 +48,7 @@ public:
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return TraceHitItemLastFrame; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
+	FORCEINLINE bool GetCrouching() const {return bCrouching; }
 
 
 private:
@@ -178,8 +180,15 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
 	USceneComponent* HandClipLocation;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
 	EMovementStatus MovementStatus;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
+	bool bCrouching;
+
+
+
+	
 	
 protected:
 	// Called when the game starts or when spawned
@@ -249,7 +258,7 @@ protected:
 
 	void ToggleSit();
 
-	
+	void CrouchButtonPressed();
 	
 	
 public:	

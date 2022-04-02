@@ -3,8 +3,13 @@
 
 #include "ShooterAnimInstance.h"
 
+
+
 #include "MainCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
+
+
 #include "Kismet/KismetMathLibrary.h"
 
 
@@ -19,8 +24,11 @@ UShooterAnimInstance::UShooterAnimInstance() :
 	CharacterYawLastFrame(0.f),
 	RootYawOffset(0.f),
 	Pitch(0.f),
-	bReloading(false)
-	
+	bReloading(false),
+	OffsetState(EOffsetState::EOS_HipFire),
+	YawLeanDelta(0.f),
+	LeanCharacterRotation(FRotator(0.f)),
+	LeanCharacterRotationLastFrame(FRotator(0.f))
 {
 	
 }
@@ -34,9 +42,11 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	}
 	if (ShooterCharacter)
 	{
+		
+
+		bCrouchingForAnims = ShooterCharacter->GetCrouching();
+
 		bReloading = ShooterCharacter->GetCombatState()==ECombatState::ECS_ReloadingState;
-
-
 		//Get later Speed of Character from Velocity - speed from falling is not taken into account
 		FVector Velocity = ShooterCharacter->GetVelocity();
 		Velocity.Z = 0.f;
@@ -80,9 +90,29 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		// 	// FString MovementRotationMessage = FString::Printf(TEXT("%f"), MovementRotation.Yaw);
 		// 	GEngine->AddOnScreenDebugMessage(1, 0, FColor::White, MovementOffsetMessage);
 		// }
+
+		if(bReloading)
+		{
+			OffsetState = EOffsetState::EOS_Reloading;
+		}
+			else if (bIsInAir)
+		{
+			OffsetState = EOffsetState::EOS_InAir;
+		}
+		else if(ShooterCharacter->GetAiming())
+		{
+			OffsetState = EOffsetState::EOS_Aiming;	
+		}
+		else
+		{
+			OffsetState = EOffsetState::EOS_HipFire;
+		}
+
+		
 	}
 
 	TurnInPlace();
+	Lean(DeltaTime);
 }
 
 
@@ -100,7 +130,7 @@ void UShooterAnimInstance::TurnInPlace()
 	
 
 	
-	if (Speed > 0)
+	if (Speed > 0.001f || (bIsInAir))
 	{
 		RootYawOffset = 0.f;
 		CharacterYaw = ShooterCharacter->GetActorRotation().Yaw;
@@ -113,10 +143,10 @@ void UShooterAnimInstance::TurnInPlace()
 		CharacterYawLastFrame = CharacterYaw;
 		CharacterYaw = ShooterCharacter->GetActorRotation().Yaw;
 		// Difference between yaw last frame and this frame
-		const float YawDelta{CharacterYaw - CharacterYawLastFrame};
+		const float YawTIPDelta{(CharacterYaw - CharacterYawLastFrame)};
 
 		// Clamps Root Yaw Offset to -180, 180
-		RootYawOffset = UKismetMathLibrary::NormalizeAxis(RootYawOffset - YawDelta);
+		RootYawOffset = UKismetMathLibrary::NormalizeAxis(RootYawOffset - YawTIPDelta);
 		// Metadata attached to our curve for turn in place animations
 
 		const float Turning{GetCurveValue(TEXT("Turning"))};
@@ -149,5 +179,24 @@ void UShooterAnimInstance::TurnInPlace()
 			                                 FString::Printf(TEXT("Root Yaw Offset: %f"), RootYawOffset));
 		}
 	}
+}
+
+void UShooterAnimInstance::Lean(float DeltaTime)
+{
+	if(ShooterCharacter==nullptr) return;
+	LeanCharacterRotationLastFrame = LeanCharacterRotation;
+	LeanCharacterRotation= ShooterCharacter->GetActorRotation();
+
+	 const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(LeanCharacterRotation, LeanCharacterRotationLastFrame);
+	
+	// This gives us a measure of how quickly we are turning
+	const float TargetYaw{ DeltaRotation.Yaw / DeltaTime}; 
+	// Interolates yaw delta towards its target
+	const float TargetYawInterp{FMath::FInterpTo(YawLeanDelta, TargetYaw, DeltaTime, 6.f)};
+
+	// Clamps the yaw delta to a value between -90 degrees and 90 degrees 
+	YawLeanDelta = FMath::Clamp(TargetYawInterp, -90.f, 90.f);
+
+	if(GEngine)GEngine->AddOnScreenDebugMessage(3,-1, FColor::Emerald, FString::Printf(TEXT("YawLeanDelta: %f"), YawLeanDelta));
 }
 

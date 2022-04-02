@@ -4,11 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+
+
+
 #include "ShooterAnimInstance.generated.h"
 
-/**
- * 
- */
+UENUM(BlueprintType)
+enum class EOffsetState : uint8
+{
+	EOS_Aiming UMETA(DisplayName="Aiming"),
+	EOS_HipFire UMETA(DisplayName="HipFire"),
+	EOS_Reloading UMETA(DisplayName="Reloading"),
+	EOS_InAir UMETA(DisplayName="InAir"),
+	
+	EOS_MAX UMETA(DisplayName="DefaultMax")
+};
 UCLASS()
 class MASTERSHOOTERCOURSE_API UShooterAnimInstance : public UAnimInstance
 {
@@ -28,6 +38,9 @@ protected:
 
 	// Will handle the turning in place variables
 	void TurnInPlace();
+
+	//Handles Calculations for leaning while running
+	void Lean(float DeltaTime);
 
 
 private:
@@ -64,6 +77,10 @@ private:
 	//Yaw of the character in the previous frame - used for turn in place anims
 	float CharacterYawLastFrame;
 
+	// Delta yaw value used for leaning while running animations
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	float YawLeanDelta;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	float RootYawOffset;
 
@@ -80,4 +97,18 @@ private:
 	// Used to re-center our character when reloading to prevent an animation offset for the gun's clip
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	bool bReloading;
+
+	// Will be used to determine which aim offset blendspace to use in our animation blueprint 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	EOffsetState OffsetState;
+
+	FRotator LeanCharacterRotation;
+
+	FRotator LeanCharacterRotationLastFrame;
+
+	// Powers the crouching anims, true when our character is crouching
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	bool bCrouchingForAnims;
+	
+	
 };
