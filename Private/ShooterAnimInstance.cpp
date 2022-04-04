@@ -27,9 +27,9 @@ UShooterAnimInstance::UShooterAnimInstance() :
 	OffsetState(EOffsetState::EOS_HipFire),
 	LeanCharacterRotation(FRotator(0.f)),
 	LeanCharacterRotationLastFrame(FRotator(0.f)),
-	RecoilWeight(0.f),
+	RecoilWeight(1.f),
 	bTurningInPlace(false),
-	ReloadWeight(0.f)
+	ReloadWeight(.85f)
 
 {
 }
@@ -110,6 +110,7 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 
 	TurnInPlace();
 	Lean(DeltaTime);
+	SetRecoilAndReloadWeights();
 }
 
 
@@ -117,6 +118,66 @@ void UShooterAnimInstance::NativeInitializeAnimation()
 {
 	// Super::NativeInitializeAnimation();
 	ShooterCharacter = Cast<AMainCharacter>(TryGetPawnOwner());
+}
+
+void UShooterAnimInstance::SetRecoilAndReloadWeights()
+{
+	if (bTurningInPlace) /* TURNING IN PLACE  */
+	{
+		if (bReloading)
+		{
+			RecoilWeight = 1.f; // Full reload animation, Full Recoil Animation
+			if(bCrouchingForAnims)
+			{
+				ReloadWeight = 0.f; // NO AIM ANIM, ALL RELOAD ANIM
+			}
+		}
+		else
+		{
+			RecoilWeight = 0.f; // No reload animation, no recoil animation
+		}
+	}
+	else  /* NOT turning in place */
+	{
+		if(bCrouchingForAnims) // Crouching not turning
+		{
+			if (bReloading) // Crouching, reloading
+			{
+				RecoilWeight = 1.f;  // Full Reload animation
+			}
+			else // Crouching hip fire stance
+			{
+				RecoilWeight = 0.2f; // Very Little Recoil
+			}
+		}
+		else // standing upright
+		{
+			if(bAiming) // Standing still, upright, Aiming 
+			{
+				if(bReloading) // and reloading
+				{
+					RecoilWeight=1.f; // full reload animation
+					ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
+				}
+				else // just aiming
+				{
+					RecoilWeight=.5f; // Half recoil
+					ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
+				}
+					
+			}
+			else if (bReloading) // standing upright, not aiming, and reloading
+			{
+				RecoilWeight=1.f; // Full Recoil Animation
+				ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
+			}
+			else // Basic hipfire stance
+			{
+				RecoilWeight=.5f; // Half recoil
+				ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
+			}
+		}
+	}
 }
 
 void UShooterAnimInstance::TurnInPlace()
@@ -173,62 +234,7 @@ void UShooterAnimInstance::TurnInPlace()
 		{
 			bTurningInPlace = false;
 		}
-		if (bTurningInPlace) /* TURNING IN PLACE  */
-		{
-			if (bReloading)
-			{
-				RecoilWeight = 1.f; // Full reload animation, Full Recoil Animation
-				if(bCrouchingForAnims)
-				{
-					ReloadWeight = 0.f;
-				}
-			}
-			else
-			{
-				RecoilWeight = 0.f; // No reload animation, no recoil animation
-			}
-		}
-		else  /* NOT turning in place */
-		{
-			if(bCrouchingForAnims) // Crouching not turning
-			{
-				if (bReloading) // Crouching, reloading
-				{
-					RecoilWeight = 1.f;  // Full Reload animation
-				}
-				else // Crouching hip fire stance
-				{
-					RecoilWeight = 0.2f; // Very Little Recoil
-				}
-			}
-			else // standing upright
-			{
-				if(bAiming) // Standing still, upright, Aiming 
-				{
-					if(bReloading) // and reloading
-					{
-						RecoilWeight=1.f; // full reload animation
-						ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
-					}
-					else // just aiming
-					{
-						RecoilWeight=.5f; // Half recoil
-						ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
-					}
-					
-				}
-				else if (bReloading) // standing upright, not aiming, and reloading
-				{
-					RecoilWeight=1.f; // Full Recoil Animation
-					ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
-				}
-				else // Basic hipfire stance
-				{
-					RecoilWeight=.5f; // Half recoil
-					ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
-				}
-			}
-		}
+		
 		
 
 		if (GEngine)

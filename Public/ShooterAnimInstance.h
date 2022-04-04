@@ -33,6 +33,7 @@ public:
 	UShooterAnimInstance();
 	
 	virtual void NativeInitializeAnimation() override;
+	void SetRecoilAndReloadWeights();
 
 protected:
 
