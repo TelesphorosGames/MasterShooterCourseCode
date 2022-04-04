@@ -180,16 +180,14 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
 	USceneComponent* HandClipLocation;
 
+	// Our movement status, used for animation checks
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
 	EMovementStatus MovementStatus;
 
+	// True when crouching
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
 	bool bCrouching;
 
-
-
-	
-	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -260,13 +258,13 @@ protected:
 
 	void CrouchButtonPressed();
 	
-	
+	//123f 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
 	float BaseTurnRate =15.f ;

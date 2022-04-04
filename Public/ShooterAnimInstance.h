@@ -109,6 +109,19 @@ private:
 	// Powers the crouching anims, true when our character is crouching
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	bool bCrouchingForAnims;
+
+	// Changes how much recoil our animation will have to help clean up our turn in place and crouch animations
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Animation", meta = (AllowPrivateAccess=true))
+	float RecoilWeight;
+
+	// Changes how much weight our reload animation will hold in our animation BP
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Animation", meta = (AllowPrivateAccess=true))
+	float ReloadWeight;
+
+	// True when we are turning in place, used with RecoilWeight and ReloadWeight
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
+	bool bTurningInPlace;
+	
 	
 	
 };

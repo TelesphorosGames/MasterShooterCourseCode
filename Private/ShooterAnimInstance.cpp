@@ -4,10 +4,8 @@
 #include "ShooterAnimInstance.h"
 
 
-
 #include "MainCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
 
 
 #include "Kismet/KismetMathLibrary.h"
@@ -22,15 +20,18 @@ UShooterAnimInstance::UShooterAnimInstance() :
 	bAiming(false),
 	CharacterYaw(0.f),
 	CharacterYawLastFrame(0.f),
+	YawLeanDelta(0.f),
 	RootYawOffset(0.f),
 	Pitch(0.f),
 	bReloading(false),
 	OffsetState(EOffsetState::EOS_HipFire),
-	YawLeanDelta(0.f),
 	LeanCharacterRotation(FRotator(0.f)),
-	LeanCharacterRotationLastFrame(FRotator(0.f))
+	LeanCharacterRotationLastFrame(FRotator(0.f)),
+	RecoilWeight(0.f),
+	bTurningInPlace(false),
+	ReloadWeight(0.f)
+
 {
-	
 }
 
 
@@ -42,11 +43,9 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	}
 	if (ShooterCharacter)
 	{
-		
-
 		bCrouchingForAnims = ShooterCharacter->GetCrouching();
 
-		bReloading = ShooterCharacter->GetCombatState()==ECombatState::ECS_ReloadingState;
+		bReloading = ShooterCharacter->GetCombatState() == ECombatState::ECS_ReloadingState;
 		//Get later Speed of Character from Velocity - speed from falling is not taken into account
 		FVector Velocity = ShooterCharacter->GetVelocity();
 		Velocity.Z = 0.f;
@@ -91,24 +90,22 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		// 	GEngine->AddOnScreenDebugMessage(1, 0, FColor::White, MovementOffsetMessage);
 		// }
 
-		if(bReloading)
+		if (bReloading)
 		{
 			OffsetState = EOffsetState::EOS_Reloading;
 		}
-			else if (bIsInAir)
+		else if (bIsInAir)
 		{
 			OffsetState = EOffsetState::EOS_InAir;
 		}
-		else if(ShooterCharacter->GetAiming())
+		else if (ShooterCharacter->GetAiming())
 		{
-			OffsetState = EOffsetState::EOS_Aiming;	
+			OffsetState = EOffsetState::EOS_Aiming;
 		}
 		else
 		{
 			OffsetState = EOffsetState::EOS_HipFire;
 		}
-
-		
 	}
 
 	TurnInPlace();
@@ -127,9 +124,8 @@ void UShooterAnimInstance::TurnInPlace()
 	if (ShooterCharacter == nullptr) return;
 
 	Pitch = ShooterCharacter->GetBaseAimRotation().Pitch;
-	
 
-	
+
 	if (Speed > 0.001f || (bIsInAir))
 	{
 		RootYawOffset = 0.f;
@@ -150,14 +146,16 @@ void UShooterAnimInstance::TurnInPlace()
 		// Metadata attached to our curve for turn in place animations
 
 		const float Turning{GetCurveValue(TEXT("Turning"))};
-		if (Turning > 0)
+		if (Turning > 0) /* TURNING IN PLACE  */
 		{
+			bTurningInPlace = true;
 			RotationCurveLastFrame = RotationCurve;
 			RotationCurve = GetCurveValue(TEXT("Rotation"));
 			// Giving us the very small amount that we are turning each frame, using our rotation curve data
 			const float DeltaRotation{RotationCurve - RotationCurveLastFrame};
 
-			/* If the RootYawOffset is positive, ( Greater than 0 ) we are turning left. If it is negative, we are turning right.
+			/* If the RootYawOffset is positive, ( Greater than 0 ) we are turning left.
+			 * If it is negative, we are turning right.
 			*/
 			// Determines if we are turning right or left
 			RootYawOffset > 0 ? RootYawOffset -= DeltaRotation : RootYawOffset += DeltaRotation;
@@ -171,6 +169,68 @@ void UShooterAnimInstance::TurnInPlace()
 				RootYawOffset > 0 ? RootYawOffset -= YawExcess : RootYawOffset += YawExcess;
 			}
 		}
+		else /* NOT turning in place */
+		{
+			bTurningInPlace = false;
+		}
+		if (bTurningInPlace) /* TURNING IN PLACE  */
+		{
+			if (bReloading)
+			{
+				RecoilWeight = 1.f; // Full reload animation, Full Recoil Animation
+				if(bCrouchingForAnims)
+				{
+					ReloadWeight = 0.f;
+				}
+			}
+			else
+			{
+				RecoilWeight = 0.f; // No reload animation, no recoil animation
+			}
+		}
+		else  /* NOT turning in place */
+		{
+			if(bCrouchingForAnims) // Crouching not turning
+			{
+				if (bReloading) // Crouching, reloading
+				{
+					RecoilWeight = 1.f;  // Full Reload animation
+				}
+				else // Crouching hip fire stance
+				{
+					RecoilWeight = 0.2f; // Very Little Recoil
+				}
+			}
+			else // standing upright
+			{
+				if(bAiming) // Standing still, upright, Aiming 
+				{
+					if(bReloading) // and reloading
+					{
+						RecoilWeight=1.f; // full reload animation
+						ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
+					}
+					else // just aiming
+					{
+						RecoilWeight=.5f; // Half recoil
+						ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
+					}
+					
+				}
+				else if (bReloading) // standing upright, not aiming, and reloading
+				{
+					RecoilWeight=1.f; // Full Recoil Animation
+					ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
+				}
+				else // Basic hipfire stance
+				{
+					RecoilWeight=.5f; // Half recoil
+					ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
+				}
+			}
+		}
+		
+
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(1, -1, FColor::Blue,
@@ -183,20 +243,22 @@ void UShooterAnimInstance::TurnInPlace()
 
 void UShooterAnimInstance::Lean(float DeltaTime)
 {
-	if(ShooterCharacter==nullptr) return;
+	if (ShooterCharacter == nullptr) return;
 	LeanCharacterRotationLastFrame = LeanCharacterRotation;
-	LeanCharacterRotation= ShooterCharacter->GetActorRotation();
+	LeanCharacterRotation = ShooterCharacter->GetActorRotation();
 
-	 const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(LeanCharacterRotation, LeanCharacterRotationLastFrame);
-	
+	const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(
+		LeanCharacterRotation, LeanCharacterRotationLastFrame);
+
 	// This gives us a measure of how quickly we are turning
-	const float TargetYaw{ DeltaRotation.Yaw / DeltaTime}; 
+	const float TargetYaw{DeltaRotation.Yaw / DeltaTime};
 	// Interolates yaw delta towards its target
 	const float TargetYawInterp{FMath::FInterpTo(YawLeanDelta, TargetYaw, DeltaTime, 6.f)};
 
 	// Clamps the yaw delta to a value between -90 degrees and 90 degrees 
 	YawLeanDelta = FMath::Clamp(TargetYawInterp, -90.f, 90.f);
 
-	if(GEngine)GEngine->AddOnScreenDebugMessage(3,-1, FColor::Emerald, FString::Printf(TEXT("YawLeanDelta: %f"), YawLeanDelta));
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(3, -1, FColor::Emerald,
+		                                 FString::Printf(TEXT("YawLeanDelta: %f"), YawLeanDelta));
 }
-
