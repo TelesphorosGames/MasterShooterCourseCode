@@ -289,7 +289,8 @@ public:
 
 	FTimerHandle AutoFireTimer;
 
-	float AutoFireRate = 0.15f;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
+	float AutoFireRate = 0.1f;
 
 	void FireButtonPressed();
 

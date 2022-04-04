@@ -16,6 +16,7 @@ enum class EOffsetState : uint8
 	EOS_HipFire UMETA(DisplayName="HipFire"),
 	EOS_Reloading UMETA(DisplayName="Reloading"),
 	EOS_InAir UMETA(DisplayName="InAir"),
+	EOS_RunningAiming UMETA(DisplayName="RunningAiming"),
 	
 	EOS_MAX UMETA(DisplayName="DefaultMax")
 };

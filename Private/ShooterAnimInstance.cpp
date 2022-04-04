@@ -100,7 +100,14 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		}
 		else if (ShooterCharacter->GetAiming())
 		{
-			OffsetState = EOffsetState::EOS_Aiming;
+			if(Speed>50.f)
+			{
+				OffsetState=EOffsetState::EOS_RunningAiming;
+			}
+			else
+			{
+				OffsetState = EOffsetState::EOS_Aiming;
+			}
 		}
 		else
 		{
@@ -144,9 +151,11 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 			if (bReloading) // Crouching, reloading
 			{
 				RecoilWeight = 1.f;  // Full Reload animation
+				ReloadWeight = 0.f;
 			}
 			else // Crouching hip fire stance
 			{
+				ReloadWeight =.8f;
 				RecoilWeight = 0.2f; // Very Little Recoil
 			}
 		}
