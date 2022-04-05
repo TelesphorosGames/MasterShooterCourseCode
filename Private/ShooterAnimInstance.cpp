@@ -153,6 +153,11 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 				RecoilWeight = 1.f;  // Full Reload animation
 				ReloadWeight = 0.f;
 			}
+			else if(bAiming)
+			{
+				RecoilWeight=.5f; // Half recoil
+				ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
+			}
 			else // Crouching hip fire stance
 			{
 				ReloadWeight =.8f;
@@ -165,7 +170,7 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 			{
 				if(bReloading) // and reloading
 				{
-					RecoilWeight=1.f; // full reload animation
+					RecoilWeight=.9f; // full reload animation
 					ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
 				}
 				else // just aiming
@@ -177,7 +182,7 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 			}
 			else if (bReloading) // standing upright, not aiming, and reloading
 			{
-				RecoilWeight=1.f; // Full Recoil Animation
+				RecoilWeight=.9f; // Full Recoil Animation
 				ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
 			}
 			else // Basic hipfire stance
