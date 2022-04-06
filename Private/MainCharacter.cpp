@@ -2,7 +2,6 @@
 
 
 #include "MainCharacter.h"
-#include "DrawDebugHelpers.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -38,7 +37,9 @@ AMainCharacter::AMainCharacter() :
 	StartingAssaultRifleAmmo(120),
 	CombatState(ECombatState::ECS_Unoccupied),
 	MovementStatus(EMovementStatus::EMS_Standing),
-	bShouldFire(true)
+	bShouldFire(true),
+	BaseMovementSpeed(650.f),
+	CrouchMovementSpeed(200.f)
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -149,7 +150,18 @@ void AMainCharacter::LookUpAtRate(float Rate)
 
 void AMainCharacter::Jump()
 {
-	Super::Jump();
+	
+
+	if(bCrouching)
+	{
+		bCrouching=false;
+		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
+	}
+	else
+	{
+		Super::Jump();
+	}
+	
 }
 
 void AMainCharacter::StopJumping()
@@ -187,6 +199,7 @@ void AMainCharacter::BeginPlay()
 	//Spawns the default weapon and equips it 
 	EquipWeapon(SpawnDefaultWeapon());
 	InitializeAmmoMap();
+	GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
 }
 
 void AMainCharacter::PlayGunFireSound()
@@ -641,6 +654,14 @@ void AMainCharacter::CrouchButtonPressed()
 	if(!GetCharacterMovement()->IsFalling())
 	{
 		bCrouching=!bCrouching;
+	}
+	if(bCrouching)
+	{
+		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
 	}
 }
 

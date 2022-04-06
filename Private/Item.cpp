@@ -282,8 +282,8 @@ void AItem::StartItemCurve(AMainCharacter* Character)
 
 	//* Getting the initial values for the Yaw directions of the item we're picking up
 	//* and player camera so that we can match the two and the item always faces the item
-	const float CameraRotationYaw = {Character->GetFollowCamera()->GetComponentRotation().Yaw};
-	const float ItemRotationYaw = {GetActorRotation().Yaw};
+	const double CameraRotationYaw = {Character->GetFollowCamera()->GetComponentRotation().Yaw};
+	const double ItemRotationYaw = {GetActorRotation().Yaw};
 
 	// Inital yaw direction offset between camera and item, used to interp in ItemInterp
 	InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;

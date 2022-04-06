@@ -214,7 +214,7 @@ void UShooterAnimInstance::TurnInPlace()
 		CharacterYawLastFrame = CharacterYaw;
 		CharacterYaw = ShooterCharacter->GetActorRotation().Yaw;
 		// Difference between yaw last frame and this frame
-		const float YawTIPDelta{(CharacterYaw - CharacterYawLastFrame)};
+		const float YawTIPDelta = {(CharacterYaw - CharacterYawLastFrame)};
 
 		// Clamps Root Yaw Offset to -180, 180
 		RootYawOffset = UKismetMathLibrary::NormalizeAxis(RootYawOffset - YawTIPDelta);
@@ -271,9 +271,9 @@ void UShooterAnimInstance::Lean(float DeltaTime)
 		LeanCharacterRotation, LeanCharacterRotationLastFrame);
 
 	// This gives us a measure of how quickly we are turning
-	const float TargetYaw{DeltaRotation.Yaw / DeltaTime};
+	const float TargetYaw = DeltaRotation.Yaw / DeltaTime;
 	// Interolates yaw delta towards its target
-	const float TargetYawInterp{FMath::FInterpTo(YawLeanDelta, TargetYaw, DeltaTime, 6.f)};
+	const float TargetYawInterp = FMath::FInterpTo(YawLeanDelta, TargetYaw, DeltaTime, 6.f);
 
 	// Clamps the yaw delta to a value between -90 degrees and 90 degrees 
 	YawLeanDelta = FMath::Clamp(TargetYawInterp, -90.f, 90.f);

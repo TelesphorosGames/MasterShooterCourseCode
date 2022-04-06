@@ -188,6 +188,12 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
 	bool bCrouching;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
+	float CrouchMovementSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
+	float BaseMovementSpeed;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
