@@ -12,6 +12,7 @@
 #include "Sound/SoundCue.h"
 #include "Item.h"
 #include "Weapon.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 
 
@@ -39,7 +40,10 @@ AMainCharacter::AMainCharacter() :
 	MovementStatus(EMovementStatus::EMS_Standing),
 	bShouldFire(true),
 	BaseMovementSpeed(650.f),
-	CrouchMovementSpeed(200.f)
+	CrouchMovementSpeed(200.f),
+	CurrentCapsuleHalfHeight(88.f),
+	StandingCapsuleHalfHeight(88.f),
+	CrouchingCapsuleHalfHeight(44.f)
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -341,11 +345,16 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 void AMainCharacter::AimingButtonPressed()
 {
 	bAiming = true;
+	BaseTurnRate = AimingTurnRate;
+	BaseLookUpRate = AimingLookUpRate;
 }
 
 void AMainCharacter::AimingButtonReleased()
 {
 	bAiming = false;
+	BaseTurnRate = HipTurnRate;
+	BaseLookUpRate = HipLookUpRate;
+	
 }
 
 void AMainCharacter::SetZoomInterp(float DeltaTime)
@@ -361,19 +370,6 @@ void AMainCharacter::SetZoomInterp(float DeltaTime)
 	FollowCamera->SetFieldOfView(CameraCurrentFOV);
 }
 
-void AMainCharacter::SetLookRates()
-{
-	if (bAiming)
-	{
-		BaseTurnRate = AimingTurnRate;
-		BaseLookUpRate = AimingLookUpRate;
-	}
-	else
-	{
-		BaseTurnRate = HipTurnRate;
-		BaseLookUpRate = HipLookUpRate;
-	}
-}
 
 void AMainCharacter::CalculateCrosshairSpread(float DeltaTime)
 {
@@ -658,11 +654,41 @@ void AMainCharacter::CrouchButtonPressed()
 	if(bCrouching)
 	{
 		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
+		GetCharacterMovement()->BrakingFriction=100.f;
+		InterpCapsuleHalfHeight();
 	}
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
+		GetCharacterMovement()->BrakingFriction=3.f;
+		InterpCapsuleHalfHeight();
 	}
+}
+
+void AMainCharacter::InterpCapsuleHalfHeight()
+{
+	float TargetHalfHeight = StandingCapsuleHalfHeight;
+	if(bCrouching)
+	{
+		TargetHalfHeight = CrouchingCapsuleHalfHeight;
+		const float DeltaCapsuleHalfHeight = TargetHalfHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+
+		const FVector MeshOffset = {0, 0, -DeltaCapsuleHalfHeight};
+		GetMesh()->AddLocalOffset(MeshOffset);
+	
+		GetCapsuleComponent()->SetCapsuleHalfHeight(TargetHalfHeight, true);
+	}
+	else
+	{
+		TargetHalfHeight=StandingCapsuleHalfHeight;
+		const float DeltaCapsuleHalfHeight = TargetHalfHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+
+		const FVector MeshOffset = {0, 0, -DeltaCapsuleHalfHeight};
+		GetMesh()->AddLocalOffset(MeshOffset);
+	
+		GetCapsuleComponent()->SetCapsuleHalfHeight(StandingCapsuleHalfHeight, true);
+	}
+	
 }
 
 // Called every frame
@@ -671,10 +697,11 @@ void AMainCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	SetZoomInterp(DeltaTime);
-	SetLookRates();
+	
 	CalculateCrosshairSpread(DeltaTime);
 
 	TraceForItems();
+	
 }
 
 // Called to bind functionality to input

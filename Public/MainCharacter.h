@@ -194,6 +194,14 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
 	float BaseMovementSpeed;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	float CurrentCapsuleHalfHeight;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	float StandingCapsuleHalfHeight;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	float CrouchingCapsuleHalfHeight;
+	
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -211,7 +219,7 @@ protected:
 
 	void SetZoomInterp(float DeltaTime);
 
-	void SetLookRates();
+	
 
 	void CalculateCrosshairSpread(float DeltaTime);
 
@@ -264,7 +272,7 @@ protected:
 
 	void CrouchButtonPressed();
 	
-	//123f 
+	void InterpCapsuleHalfHeight();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
