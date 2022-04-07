@@ -217,6 +217,12 @@ protected:
 	void AimingButtonPressed();
 	void AimingButtonReleased();
 
+	bool bAimingButtonPressed;
+	
+
+	void Aim();
+	void StopAiming();
+
 	void SetZoomInterp(float DeltaTime);
 
 	

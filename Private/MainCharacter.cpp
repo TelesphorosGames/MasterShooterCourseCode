@@ -40,7 +40,7 @@ AMainCharacter::AMainCharacter() :
 	MovementStatus(EMovementStatus::EMS_Standing),
 	bShouldFire(true),
 	BaseMovementSpeed(650.f),
-	CrouchMovementSpeed(200.f),
+	CrouchMovementSpeed(300.f),
 	CurrentCapsuleHalfHeight(88.f),
 	StandingCapsuleHalfHeight(88.f),
 	CrouchingCapsuleHalfHeight(44.f)
@@ -144,12 +144,27 @@ void AMainCharacter::MoveRight(float Value)
 
 void AMainCharacter::TurnAtRate(float Rate)
 {
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	if(!bAiming)
+	{
+		AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+	}
+	else
+	{
+		AddControllerYawInput(Rate * AimingTurnRate * GetWorld()->GetDeltaSeconds());
+	}
+	
 }
 
 void AMainCharacter::LookUpAtRate(float Rate)
 {
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	if(!bAiming)
+	{
+		AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+	}
+	else
+	{
+		AddControllerPitchInput(Rate * AimingLookUpRate * GetWorld()->GetDeltaSeconds());
+	}
 }
 
 void AMainCharacter::Jump()
@@ -344,17 +359,60 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 
 void AMainCharacter::AimingButtonPressed()
 {
-	bAiming = true;
-	BaseTurnRate = AimingTurnRate;
-	BaseLookUpRate = AimingLookUpRate;
+	bAimingButtonPressed = true;
+	if(CombatState!=ECombatState::ECS_ReloadingState)
+	{
+		Aim();
+	}
+	
+	
 }
 
 void AMainCharacter::AimingButtonReleased()
 {
-	bAiming = false;
-	BaseTurnRate = HipTurnRate;
-	BaseLookUpRate = HipLookUpRate;
+	bAimingButtonPressed=false;
+	if(bAiming)
+	{
+		StopAiming();
+	}
+		
 	
+	
+	
+}
+
+void AMainCharacter::Aim()
+{
+	if(!bAiming && bAimingButtonPressed)
+	{
+		bAiming = true;
+		BaseTurnRate = AimingTurnRate;
+		BaseLookUpRate = AimingLookUpRate;
+		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
+		
+		
+	}
+	
+}
+
+void AMainCharacter::StopAiming()
+{
+	if(bAiming)
+	{
+		bAiming = false;
+        	BaseTurnRate = HipTurnRate;
+        	BaseLookUpRate = HipLookUpRate;
+		
+        	
+	}
+	if(bCrouching)
+    		{
+    			GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
+    		}
+    		else
+    		{
+    			GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
+    		}
 }
 
 void AMainCharacter::SetZoomInterp(float DeltaTime)
@@ -546,6 +604,9 @@ void AMainCharacter::ReloadButtonPressed()
 void AMainCharacter::ReloadWeapon()
 {
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
+
+
+	
 	if (EquippedWeapon == nullptr) return;
 
 	if (CarryingAmmo() && (!EquippedWeapon->ClipIsFull()))
@@ -558,6 +619,10 @@ void AMainCharacter::ReloadWeapon()
 			//TODO : Switch on equipped weapon type
 			AnimInstance->Montage_JumpToSection(EquippedWeapon->GetReloadMontageSection());
 		}
+		if(bAiming)
+        {
+         	StopAiming();
+        }
 	}
 }
 
@@ -578,6 +643,11 @@ void AMainCharacter::FinishReloading()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
 
+	if(bAimingButtonPressed)
+	{
+		Aim();
+	}
+	
 	if (EquippedWeapon == nullptr) return;
 	const auto AmmoType = EquippedWeapon->GetAmmoType();
 	if (AmmoMap.Contains(AmmoType))
@@ -603,6 +673,10 @@ void AMainCharacter::FinishReloading()
 			CarriedAmmo -= MagazineRoom;
 			AmmoMap.Add(AmmoType, CarriedAmmo);
 		}
+	}
+	if(bFireButtonPressed)
+	{
+		FireWeapon();
 	}
 }
 
@@ -649,20 +723,23 @@ void AMainCharacter::CrouchButtonPressed()
 {
 	if(!GetCharacterMovement()->IsFalling())
 	{
-		bCrouching=!bCrouching;
+		// TODO : REWORK CROUCH AND ENSURE RELOAD AND EVERYHITNG WORKS RIGHT 
+		if(bCrouching)
+        	{
+        		bCrouching=false;
+        		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
+        		GetCharacterMovement()->BrakingFriction=100.f;
+        		InterpCapsuleHalfHeight();
+        	}
+        	else
+        	{
+        		bCrouching=true;
+        		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
+        		GetCharacterMovement()->BrakingFriction=3.f;
+        		InterpCapsuleHalfHeight();
+        	}
 	}
-	if(bCrouching)
-	{
-		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
-		GetCharacterMovement()->BrakingFriction=100.f;
-		InterpCapsuleHalfHeight();
-	}
-	else
-	{
-		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
-		GetCharacterMovement()->BrakingFriction=3.f;
-		InterpCapsuleHalfHeight();
-	}
+	
 }
 
 void AMainCharacter::InterpCapsuleHalfHeight()

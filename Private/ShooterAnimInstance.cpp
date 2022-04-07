@@ -100,7 +100,7 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		}
 		else if (ShooterCharacter->GetAiming())
 		{
-			if(Speed>50.f)
+			if(Speed>0)
 			{
 				OffsetState=EOffsetState::EOS_RunningAiming;
 			}
@@ -138,6 +138,7 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 			{
 				ReloadWeight = 0.f; // NO AIM ANIM, ALL RELOAD ANIM
 			}
+			
 		}
 		else
 		{
@@ -170,7 +171,7 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 			{
 				if(bReloading) // and reloading
 				{
-					RecoilWeight=.9f; // full reload animation
+					RecoilWeight=.95f; // full reload animation
 					ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
 				}
 				else // just aiming
