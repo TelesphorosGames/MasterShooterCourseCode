@@ -21,7 +21,7 @@ enum class ECombatState : uint8
 	ECS_MAX UMETA(DisplayName = "DefaultMax"),
 };
 
-UENUM()
+UENUM(BlueprintType)
 enum class EMovementStatus : uint8
 {
 	EMS_Idle UMETA(DisplayName = "Idle"),
@@ -30,6 +30,18 @@ enum class EMovementStatus : uint8
 	EMS_Crouching UMETA(DisplayName= "Crouching"),
 
 	EMS_MAX UMETA(DisplayName = "DefaultMax"),
+};
+
+USTRUCT(BlueprintType)
+struct FInterpLocation
+{
+	GENERATED_BODY()
+	// Scene component used to decide which location to interpolate the pickup to
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* SceneComponent;
+	// Number of items interping to this scene component's location
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	int32 ItemCount;
 };
 
 
@@ -52,6 +64,10 @@ public:
 	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return TraceHitItemLastFrame; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	FORCEINLINE bool GetCrouching() const {return bCrouching; }
+
+
+	// Handles finding where our picked up items should interpolate to on our screen
+	FInterpLocation GetInterpLocation(int32 Index);
 
 
 private:
@@ -82,7 +98,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
 	UParticleSystem* ImpactParticles;
 
-		// Smoke Trail for Bullets : 
+	// Smoke Trail for Bullets : 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
 	UParticleSystem* BeamParticles;
 	
@@ -206,6 +222,25 @@ private:
 	float StandingCapsuleHalfHeight;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
 	float CrouchingCapsuleHalfHeight;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	USceneComponent* WeaponInterpComp;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	USceneComponent* InterpComp1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	USceneComponent* InterpComp2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	USceneComponent* InterpComp3;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	USceneComponent* InterpComp4;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	USceneComponent* InterpComp5;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	USceneComponent* InterpComp6;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	TArray<FInterpLocation> InterpLocations;
+
 	
 
 protected:
@@ -231,6 +266,8 @@ protected:
 
 	void SetZoomInterp(float DeltaTime);
 
+	void InitializeInterpLocations();
+
 	
 
 	void CalculateCrosshairSpread(float DeltaTime);
@@ -254,7 +291,7 @@ protected:
 
 	
 	void SwapWeapon(AWeapon* WeaponToSwap);
-
+	void PickupAmmo(class AAmmo* Ammo);
 	
 	void InitializeAmmoMap();
 
@@ -285,13 +322,18 @@ protected:
 	void CrouchButtonPressed();
 	
 	void InterpCapsuleHalfHeight();
+
+	
+
+
+	
 public:	
 	
 	
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
 	float BaseTurnRate;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
@@ -337,8 +379,12 @@ public:
 	float GetCrosshairSpreadMultiplier() const;
 
 	FVector GetCameraInterpLocation();
+
 	
 	void GetPickupItem(AItem* Item);
 
-	
+	// Returns index in InterpLocations array with lowest item count
+	int32 GetInterpLocationIndex();
+
+	void IncrementInterpLocItemCount(int32 Index, int32 Amount);
 };

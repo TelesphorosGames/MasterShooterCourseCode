@@ -32,6 +32,15 @@ enum class EItemState : uint8
 	EIS_MAX UMETA(DisplayName="DefaultMAX")
 };
 
+UENUM(BlueprintType)
+enum class EItemType : uint8
+{
+	EIT_Ammo UMETA(DisplayName="Ammo"),
+	EIT_Weapon UMETA(DisplayName="Weapon"),
+
+	EIT_MAX UMETA(DisplayName="DefaultMAX")
+};
+
 UCLASS()
 class MASTERSHOOTERCOURSE_API AItem : public AActor
 {
@@ -78,7 +87,8 @@ protected:
 	//Called when the intem interp timer is finished, E.G. Item is ready to be picked up / consumed
 	void FinishInterping();
 
-
+	//Get Interp Location based on item type and spots available
+	FVector GetInterpLocation();
 	
 
 public:		
@@ -155,6 +165,13 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	USoundCue* EquipSound;
 
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	EItemType ItemType;
+
+	// Index of InterpLocation this item is interping to
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	int32 InterpLocIndex;
+
+
 };
 

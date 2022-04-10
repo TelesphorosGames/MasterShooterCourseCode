@@ -2,6 +2,8 @@
 
 
 #include "MainCharacter.h"
+
+#include "Ammo.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -80,6 +82,28 @@ AMainCharacter::AMainCharacter() :
 
 	// Creates the Scene Component used to trach the hand and gun clip movement during reload
 	HandClipLocation = CreateDefaultSubobject<USceneComponent>(TEXT("HandSceneComponent"));
+
+	// Create scene components that are used for item locations on screen during pickup
+	WeaponInterpComp = CreateDefaultSubobject<USceneComponent>(TEXT("WeaponInterpolationComponent"));
+	WeaponInterpComp->SetupAttachment(GetFollowCamera());
+	// Create scene components that are used for item locations on screen during pickup
+	InterpComp1 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent1"));
+	InterpComp1->SetupAttachment(GetFollowCamera());
+	// Create scene components that are used for item locations on screen during pickup
+	InterpComp2 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent2"));
+	InterpComp2->SetupAttachment(GetFollowCamera());
+	// Create scene components that are used for item locations on screen during pickup
+	InterpComp3 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent3"));
+	InterpComp3->SetupAttachment(GetFollowCamera());
+	// Create scene components that are used for item locations on screen during pickup
+	InterpComp4 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent4"));
+	InterpComp4->SetupAttachment(GetFollowCamera());
+	// Create scene components that are used for item locations on screen during pickup
+	InterpComp5 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent5"));
+	InterpComp5->SetupAttachment(GetFollowCamera());
+	// Create scene components that are used for item locations on screen during pickup
+	InterpComp6 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent6"));
+	InterpComp6->SetupAttachment(GetFollowCamera());
 }
 
 void AMainCharacter::Tick(float DeltaTime)
@@ -91,6 +115,14 @@ void AMainCharacter::Tick(float DeltaTime)
 	TraceForItems();
 }
 
+FInterpLocation AMainCharacter::GetInterpLocation(int32 Index)
+{
+	if(Index <= InterpLocations.Num())
+	{
+		return InterpLocations[Index];
+	}
+	return FInterpLocation();
+}
 
 
 float AMainCharacter::GetCrosshairSpreadMultiplier() const
@@ -119,6 +151,12 @@ void AMainCharacter::GetPickupItem(AItem* Item)
 	if (Weapon)
 	{
 		SwapWeapon(Weapon);
+	}
+
+	auto Ammo = Cast<AAmmo>(Item);
+	if(Ammo)
+	{
+		PickupAmmo(Ammo);
 	}
 }
 
@@ -256,6 +294,9 @@ void AMainCharacter::BeginPlay()
 	EquipWeapon(SpawnDefaultWeapon());
 	InitializeAmmoMap();
 	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+	InitializeInterpLocations();
+
+	
 }
 
 void AMainCharacter::PlayGunFireSound()
@@ -454,6 +495,59 @@ void AMainCharacter::SetZoomInterp(float DeltaTime)
 	FollowCamera->SetFieldOfView(CameraCurrentFOV);
 }
 
+void AMainCharacter::InitializeInterpLocations()
+{
+	FInterpLocation WeaponLocation = { WeaponInterpComp, 0};
+	InterpLocations.Add(WeaponLocation);
+
+	FInterpLocation ItemLoc1 = {InterpComp1, 0  };
+	InterpLocations.Add(ItemLoc1);
+
+	FInterpLocation ItemLoc2 = {InterpComp2, 0 };
+	InterpLocations.Add(ItemLoc2);
+
+	FInterpLocation ItemLoc3 = {InterpComp3, 0 };
+	InterpLocations.Add(ItemLoc3);
+
+	FInterpLocation ItemLoc4 = {InterpComp4, 0 };
+	InterpLocations.Add(ItemLoc4);
+
+	FInterpLocation ItemLoc5 = {InterpComp5, 0 };
+	InterpLocations.Add(ItemLoc5);
+
+	FInterpLocation ItemLoc6 = {InterpComp6, 0 };
+	InterpLocations.Add(ItemLoc6);
+	
+}
+
+int32 AMainCharacter::GetInterpLocationIndex()
+{
+	int32 LowestIndex = 1;
+	int32 LowestCount = INT_MAX;
+	for(int32 i=1; i < InterpLocations.Num(); i++)
+	{
+		if(InterpLocations[i].ItemCount < LowestCount)
+		{
+			LowestIndex = i;
+			LowestCount = InterpLocations[i].ItemCount;
+		}
+	}
+
+
+	
+	return LowestIndex;
+}
+
+void AMainCharacter::IncrementInterpLocItemCount(int32 Index, int32 Amount)
+{
+	if(Amount != 1) return;
+	if(InterpLocations.Num() >= Index )
+	{
+		InterpLocations[Index].ItemCount += Amount;
+	}
+	
+}
+
 
 void AMainCharacter::CalculateCrosshairSpread(float DeltaTime)
 {
@@ -590,10 +684,6 @@ void AMainCharacter::TestButtonPressed()
 	if (TraceHitItem)
 	{
 		TraceHitItem->StartItemCurve(this);
-		if (TraceHitItem->GetPickupSound())
-		{
-			UGameplayStatics::PlaySound2D(this, TraceHitItem->GetPickupSound());
-		}
 	}
 }
 
@@ -607,6 +697,26 @@ void AMainCharacter::SwapWeapon(AWeapon* WeaponToSwap)
 	EquipWeapon(WeaponToSwap);
 	TraceHitItem = nullptr;
 	TraceHitItemLastFrame = nullptr;
+}
+
+void AMainCharacter::PickupAmmo(AAmmo* Ammo)
+{
+	// Does AmmoMap contatin Ammo's AmmoType ?
+	if (AmmoMap.Find(Ammo->GetAmmoType()))
+	{
+		// Get the amount of ammo in our ammo map for this type
+		int32 AmmoCount =  AmmoMap[Ammo->GetAmmoType()] ;
+
+		AmmoCount += Ammo->GetItemCount();
+		AmmoMap[Ammo->GetAmmoType()] = AmmoCount;
+	}
+
+	if(EquippedWeapon->GetAmmoType() == Ammo->GetAmmoType())
+	{
+		if (EquippedWeapon->GetAmmo()==0) { ReloadWeapon() ; }
+	}
+
+	Ammo->Destroy();
 }
 
 void AMainCharacter::InitializeAmmoMap()

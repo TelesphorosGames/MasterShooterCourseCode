@@ -8,13 +8,17 @@
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 // Sets default values
 AItem::AItem()  :
 ItemName(FString("Default")),
 ItemCount(0),
 ItemRarity(EItemRarity::EIR_Common),
-ItemState(EItemState::EIS_OnGround)
+ItemState(EItemState::EIS_OnGround),
+ItemType(EItemType::EIT_MAX),
+InterpLocIndex(0)
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -245,10 +249,32 @@ void AItem::FinishInterping()
 	bInterping=false;
 	if(CharacterPointer)
 	{
-			CharacterPointer->GetPickupItem(this);
+		// Resetting the struct for the InterpLocation
+		CharacterPointer->IncrementInterpLocItemCount(InterpLocIndex, -1);
+		CharacterPointer->GetPickupItem(this);
 		
 	}
 	SetActorScale3D(FVector(1.f));
+}
+
+FVector AItem::GetInterpLocation()
+{
+	if(CharacterPointer==nullptr) return FVector(0);
+
+	switch(ItemType)
+	{
+	case EItemType::EIT_Ammo:
+	return CharacterPointer->GetInterpLocation(InterpLocIndex).SceneComponent->GetComponentLocation();
+	
+	case EItemType::EIT_Weapon:
+	return CharacterPointer->GetInterpLocation(0).SceneComponent->GetComponentLocation();
+	
+		default: ;
+	}
+
+
+	
+	return {};
 }
 
 // Called every frame
@@ -270,12 +296,18 @@ void AItem::StartItemCurve(AMainCharacter* Character)
 {
 	CharacterPointer = Character;
 
+	// Get array index in InterLocations with lowest item count
+	InterpLocIndex = Character->GetInterpLocationIndex();
+	// Adds 1 to the item count for this InterpLocation struct - meaning this spot is full, no other item can go here
+	Character->IncrementInterpLocItemCount(InterpLocIndex, 1);
+	
+	if(PickupSound)
+	{
+		UGameplayStatics::PlaySound2D(this, PickupSound);
+	}
 	// Stores initial location of item when interping begins
 	ItemInterpStartLocation = GetActorLocation();
 	bInterping = true;
-
-
-	//TODO : HANDLE SWITCH 
 	SetItemState(EItemState::EIS_EquipInterping);
 
 	GetWorldTimerManager().SetTimer(ItemPickupInterpTimer, this, &AItem::FinishInterping, ZCurveInterpTime);
@@ -302,7 +334,7 @@ void AItem::ItemInterp(float DeltaTime)
 		const float CurveValue = ItemZCurve->GetFloatValue(ElapsedTime);
 
 		FVector CurrentItemLocation = ItemInterpStartLocation;
-		const FVector CameraInterpLocation = CharacterPointer->GetCameraInterpLocation();
+		const FVector CameraInterpLocation = GetInterpLocation();
 
 		// Vector from item to target location, pointing straight up ( only interping the Z with this curve)
 		
