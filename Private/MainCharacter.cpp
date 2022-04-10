@@ -80,8 +80,18 @@ AMainCharacter::AMainCharacter() :
 
 	// Creates the Scene Component used to trach the hand and gun clip movement during reload
 	HandClipLocation = CreateDefaultSubobject<USceneComponent>(TEXT("HandSceneComponent"));
-	
 }
+
+void AMainCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+	SetZoomInterp(DeltaTime);
+	CalculateCrosshairSpread(DeltaTime);
+	TraceForItems();
+}
+
+
 
 float AMainCharacter::GetCrosshairSpreadMultiplier() const
 {
@@ -100,19 +110,15 @@ FVector AMainCharacter::GetCameraInterpLocation()
 
 void AMainCharacter::GetPickupItem(AItem* Item)
 {
-
-
-	if(Item->GetEquipSound())
+	if (Item->GetEquipSound())
 	{
-		UGameplayStatics::PlaySound2D(this,Item->GetEquipSound());
+		UGameplayStatics::PlaySound2D(this, Item->GetEquipSound());
 	}
-	
+
 	auto Weapon = Cast<AWeapon>(Item);
 	if (Weapon)
 	{
 		SwapWeapon(Weapon);
-		
-	
 	}
 }
 
@@ -151,7 +157,7 @@ void AMainCharacter::MoveRight(float Value)
 void AMainCharacter::TurnAtRate(float Rate)
 {
 	float ClampedRate = FMath::Clamp(Rate, -1, 1);
-	if(!bAiming)
+	if (!bAiming)
 	{
 		AddControllerYawInput(ClampedRate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 	}
@@ -159,13 +165,12 @@ void AMainCharacter::TurnAtRate(float Rate)
 	{
 		AddControllerYawInput(ClampedRate * AimingTurnRate * GetWorld()->GetDeltaSeconds());
 	}
-	
 }
 
 void AMainCharacter::LookUpAtRate(float Rate)
 {
 	float ClampedRate = FMath::Clamp(Rate, -1, 1);
-	if(!bAiming)
+	if (!bAiming)
 	{
 		AddControllerPitchInput(ClampedRate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 	}
@@ -177,10 +182,10 @@ void AMainCharacter::LookUpAtRate(float Rate)
 
 void AMainCharacter::Jump()
 {
-	if(bCrouching)
+	if (bCrouching)
 	{
-		bCrouching=false;
-		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
+		bCrouching = false;
+		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 	}
 	else
 	{
@@ -195,31 +200,29 @@ void AMainCharacter::StopJumping()
 
 void AMainCharacter::AdjustCameraLengthUp()
 {
-	if(!CameraBoom) return;
-	
-	if(CameraBoom->TargetArmLength <= 00.f)
+	if (!CameraBoom) return;
+
+	if (CameraBoom->TargetArmLength <= 00.f)
 	{
 		return;
 	}
 	else
 	{
-		CameraBoom->TargetArmLength -=30.f;
+		CameraBoom->TargetArmLength -= 30.f;
 	}
-	
 }
 
 void AMainCharacter::AdjustCameraLengthDown()
 {
-	if(!CameraBoom)return;
-	if(CameraBoom->TargetArmLength >= 670.f)
+	if (!CameraBoom)return;
+	if (CameraBoom->TargetArmLength >= 670.f)
 	{
 		return;
 	}
 	else
 	{
-		CameraBoom->TargetArmLength +=30.f;
+		CameraBoom->TargetArmLength += 30.f;
 	}
-	
 }
 
 
@@ -252,7 +255,7 @@ void AMainCharacter::BeginPlay()
 	//Spawns the default weapon and equips it 
 	EquipWeapon(SpawnDefaultWeapon());
 	InitializeAmmoMap();
-	GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 }
 
 void AMainCharacter::PlayGunFireSound()
@@ -394,59 +397,48 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 void AMainCharacter::AimingButtonPressed()
 {
 	bAimingButtonPressed = true;
-	if(CombatState!=ECombatState::ECS_ReloadingState)
+	if (CombatState != ECombatState::ECS_ReloadingState)
 	{
 		Aim();
 	}
-	
-	
 }
 
 void AMainCharacter::AimingButtonReleased()
 {
-	bAimingButtonPressed=false;
-	if(bAiming)
+	bAimingButtonPressed = false;
+	if (bAiming)
 	{
 		StopAiming();
 	}
-		
-	
-	
-	
 }
 
 void AMainCharacter::Aim()
 {
-	if(!bAiming && bAimingButtonPressed)
+	if (!bAiming && bAimingButtonPressed)
 	{
 		bAiming = true;
 		BaseTurnRate = AimingTurnRate;
 		BaseLookUpRate = AimingLookUpRate;
-		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
-		
-		
+		GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
 	}
-	
 }
 
 void AMainCharacter::StopAiming()
 {
-	if(bAiming)
+	if (bAiming)
 	{
 		bAiming = false;
-        	BaseTurnRate = HipTurnRate;
-        	BaseLookUpRate = HipLookUpRate;
-		
-        	
+		BaseTurnRate = HipTurnRate;
+		BaseLookUpRate = HipLookUpRate;
 	}
-	if(bCrouching)
-    		{
-    			GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
-    		}
-    		else
-    		{
-    			GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
-    		}
+	if (bCrouching)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+	}
 }
 
 void AMainCharacter::SetZoomInterp(float DeltaTime)
@@ -598,7 +590,7 @@ void AMainCharacter::TestButtonPressed()
 	if (TraceHitItem)
 	{
 		TraceHitItem->StartItemCurve(this);
-		if(TraceHitItem->GetPickupSound())
+		if (TraceHitItem->GetPickupSound())
 		{
 			UGameplayStatics::PlaySound2D(this, TraceHitItem->GetPickupSound());
 		}
@@ -640,7 +632,6 @@ void AMainCharacter::ReloadWeapon()
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
 
 
-	
 	if (EquippedWeapon == nullptr) return;
 
 	if (CarryingAmmo() && (!EquippedWeapon->ClipIsFull()))
@@ -653,10 +644,10 @@ void AMainCharacter::ReloadWeapon()
 			//TODO : Switch on equipped weapon type
 			AnimInstance->Montage_JumpToSection(EquippedWeapon->GetReloadMontageSection());
 		}
-		if(bAiming)
-        {
-         	StopAiming();
-        }
+		if (bAiming)
+		{
+			StopAiming();
+		}
 	}
 }
 
@@ -677,11 +668,11 @@ void AMainCharacter::FinishReloading()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
 
-	if(bAimingButtonPressed)
+	if (bAimingButtonPressed)
 	{
 		Aim();
 	}
-	
+
 	if (EquippedWeapon == nullptr) return;
 	const auto AmmoType = EquippedWeapon->GetAmmoType();
 	if (AmmoMap.Contains(AmmoType))
@@ -708,7 +699,7 @@ void AMainCharacter::FinishReloading()
 			AmmoMap.Add(AmmoType, CarriedAmmo);
 		}
 	}
-	if(bFireButtonPressed)
+	if (bFireButtonPressed)
 	{
 		FireWeapon();
 	}
@@ -716,102 +707,83 @@ void AMainCharacter::FinishReloading()
 
 void AMainCharacter::GrabClip()
 {
-	if(EquippedWeapon == nullptr) return;
+	if (EquippedWeapon == nullptr) return;
 
 	int32 ClipBoneIndex = {EquippedWeapon->GetItemMesh()->GetBoneIndex(EquippedWeapon->GetClipBoneName())};
-	
+
 	ClipTransform = EquippedWeapon->GetItemMesh()->GetBoneTransform(ClipBoneIndex);
 
 
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, true);
-	if(HandClipLocation == nullptr) return;
+	if (HandClipLocation == nullptr) return;
 
-	
-	HandClipLocation->AttachToComponent(GetMesh(),AttachmentRules, FName(TEXT("LeftHandSocket")));
+
+	HandClipLocation->AttachToComponent(GetMesh(), AttachmentRules, FName(TEXT("LeftHandSocket")));
 	HandClipLocation->SetWorldTransform(ClipTransform);
 	EquippedWeapon->SetMovingClip(true);
-	
-	
 }
 
 void AMainCharacter::ReleaseClip()
 {
 	EquippedWeapon->SetMovingClip(false);
-
-	
 }
 
 void AMainCharacter::ToggleSit()
 {
-	if(MovementStatus==EMovementStatus::EMS_Standing)
+	if (MovementStatus == EMovementStatus::EMS_Standing)
 	{
-		MovementStatus=EMovementStatus::EMS_Sitting;
+		MovementStatus = EMovementStatus::EMS_Sitting;
 	}
-	else if(MovementStatus==EMovementStatus::EMS_Sitting)
+	else if (MovementStatus == EMovementStatus::EMS_Sitting)
 	{
-		MovementStatus=EMovementStatus::EMS_Standing;
+		MovementStatus = EMovementStatus::EMS_Standing;
 	}
 }
 
 void AMainCharacter::CrouchButtonPressed()
 {
-	if(!GetCharacterMovement()->IsFalling()) // CombatState != ECombatState::ECS_ReloadingState)
+	if (!GetCharacterMovement()->IsFalling()) // CombatState != ECombatState::ECS_ReloadingState)
 	{
-		if(bCrouching)
-        	{
-        		bCrouching=false;
-        		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
-        		GetCharacterMovement()->BrakingFriction=3.f;
-        		InterpCapsuleHalfHeight();
-        	}
-        	else
-        	{
-        		bCrouching=true;
-        		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
-        		GetCharacterMovement()->BrakingFriction=100.f;
-        		InterpCapsuleHalfHeight();
-        	}
+		if (bCrouching)
+		{
+			bCrouching = false;
+			GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+			GetCharacterMovement()->BrakingFriction = 3.f;
+			InterpCapsuleHalfHeight();
+		}
+		else
+		{
+			bCrouching = true;
+			GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
+			GetCharacterMovement()->BrakingFriction = 100.f;
+			InterpCapsuleHalfHeight();
+		}
 	}
-	
 }
 
 void AMainCharacter::InterpCapsuleHalfHeight()
 {
 	float TargetHalfHeight = StandingCapsuleHalfHeight;
-	if(bCrouching)
+	if (bCrouching)
 	{
 		TargetHalfHeight = CrouchingCapsuleHalfHeight;
 		const float DeltaCapsuleHalfHeight = TargetHalfHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 
 		const FVector MeshOffset = {0, 0, -DeltaCapsuleHalfHeight};
 		GetMesh()->AddLocalOffset(MeshOffset);
-	
+
 		GetCapsuleComponent()->SetCapsuleHalfHeight(TargetHalfHeight, true);
 	}
 	else
 	{
-		TargetHalfHeight=StandingCapsuleHalfHeight;
+		TargetHalfHeight = StandingCapsuleHalfHeight;
 		const float DeltaCapsuleHalfHeight = TargetHalfHeight - GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 
 		const FVector MeshOffset = {0, 0, -DeltaCapsuleHalfHeight};
 		GetMesh()->AddLocalOffset(MeshOffset);
-	
+
 		GetCapsuleComponent()->SetCapsuleHalfHeight(StandingCapsuleHalfHeight, true);
 	}
-	
-}
-
-// Called every frame
-void AMainCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	SetZoomInterp(DeltaTime);
-	
-	CalculateCrosshairSpread(DeltaTime);
-
-	TraceForItems();
-	
 }
 
 // Called to bind functionality to input

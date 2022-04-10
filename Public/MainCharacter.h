@@ -41,7 +41,10 @@ class MASTERSHOOTERCOURSE_API AMainCharacter : public ACharacter
 public:
 	// Sets default values for this character's properties
 	AMainCharacter();
-	// Public getters and setters:
+
+	virtual void Tick(float DeltaTime) override;
+	
+
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool GetAiming() const { return bAiming ; }
@@ -283,8 +286,8 @@ protected:
 	
 	void InterpCapsuleHalfHeight();
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	
+	
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;

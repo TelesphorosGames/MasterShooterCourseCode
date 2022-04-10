@@ -4,6 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Item.h"
+#include "AmmoType.h"
+
+
+
 #include "Ammo.generated.h"
 
 /**
@@ -24,14 +28,21 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	virtual void SetItemProperties(EItemState State) override;
+
 private:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Ammo", meta = (AllowPrivateAccess=true))
 	UStaticMeshComponent* AmmoMesh;
 
+	// Decides if the gun will fire this ammo or not
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Ammo", meta = (AllowPrivateAccess=true))
+	EAmmoType AmmoType;
+
 public:
 
 	FORCEINLINE UStaticMeshComponent* GetAmmoMesh() const { return AmmoMesh ; }
+	FORCEINLINE EAmmoType GetAmmoType() const {	return AmmoType ; }
 
 	
 	
