@@ -69,8 +69,10 @@ protected:
 	// Sets properties of the Item's compents based on state
 	void SetItemProperties(EItemState State);
 
+	
 	//Called when the intem interp timer is finished, E.G. Item is ready to be picked up / consumed
 	void FinishInterping();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -92,22 +94,22 @@ public:
 private:
 
 	// Line traces will collide with item collision boxes to generate HUD elements, etc
-	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
-	UBoxComponent* CollisionBox;
+	class UBoxComponent* CollisionBox;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	class	UWidgetComponent* PickupWidget;
+	// Enables Item tracing during overlap
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	class USphereComponent* AreaSphere;
+
+	
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	USkeletalMeshComponent* ItemMesh;
 
 
 	//Popup widget for when player looks at item
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
-	UWidgetComponent* PickupWidget;
-
-
-	// Enables Item tracing during overlap
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
-	USphereComponent* AreaSphere;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	FString ItemName;

@@ -87,12 +87,15 @@ private:
 
 	void MoveForward(float Value);
 	void MoveRight(float Value);
+	
 	void TurnAtRate(float Rate);
 	void LookUpAtRate(float Rate);
 
 	virtual void Jump() override;
 	virtual void StopJumping() override;
 
+	void AdjustCameraLengthUp();
+	void AdjustCameraLengthDown();
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
 	bool bAiming;
@@ -287,21 +290,21 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
-	float BaseTurnRate =15.f ;
+	float BaseTurnRate;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
-	float BaseLookUpRate = 15.f ;
+	float BaseLookUpRate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float HipTurnRate = 35.f;
+	float HipTurnRate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float HipLookUpRate = 35.f;
+	float HipLookUpRate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float AimingTurnRate = 10.f;
+	float AimingTurnRate ;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float AimingLookUpRate = 10.f;
+	float AimingLookUpRate;
 
 	bool bFireButtonPressed;
 

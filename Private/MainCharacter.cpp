@@ -39,12 +39,17 @@ AMainCharacter::AMainCharacter() :
 	CombatState(ECombatState::ECS_Unoccupied),
 	MovementStatus(EMovementStatus::EMS_Standing),
 	bShouldFire(true),
-	BaseMovementSpeed(650.f),
-	CrouchMovementSpeed(300.f),
+	BaseMovementSpeed(675.f),
+	CrouchMovementSpeed(225.f),
 	CurrentCapsuleHalfHeight(88.f),
 	StandingCapsuleHalfHeight(88.f),
-	CrouchingCapsuleHalfHeight(44.f)
-
+	CrouchingCapsuleHalfHeight(44.f),
+	BaseTurnRate(75.f),
+	BaseLookUpRate(55.f),
+	HipTurnRate(75.f),
+	HipLookUpRate(55.f),
+	AimingTurnRate(25.f),
+	AimingLookUpRate(25.f)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -142,35 +147,36 @@ void AMainCharacter::MoveRight(float Value)
 	}
 }
 
+
 void AMainCharacter::TurnAtRate(float Rate)
 {
+	float ClampedRate = FMath::Clamp(Rate, -1, 1);
 	if(!bAiming)
 	{
-		AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
+		AddControllerYawInput(ClampedRate * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 	}
 	else
 	{
-		AddControllerYawInput(Rate * AimingTurnRate * GetWorld()->GetDeltaSeconds());
+		AddControllerYawInput(ClampedRate * AimingTurnRate * GetWorld()->GetDeltaSeconds());
 	}
 	
 }
 
 void AMainCharacter::LookUpAtRate(float Rate)
 {
+	float ClampedRate = FMath::Clamp(Rate, -1, 1);
 	if(!bAiming)
 	{
-		AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
+		AddControllerPitchInput(ClampedRate * BaseLookUpRate * GetWorld()->GetDeltaSeconds());
 	}
 	else
 	{
-		AddControllerPitchInput(Rate * AimingLookUpRate * GetWorld()->GetDeltaSeconds());
+		AddControllerPitchInput(ClampedRate * AimingLookUpRate * GetWorld()->GetDeltaSeconds());
 	}
 }
 
 void AMainCharacter::Jump()
 {
-	
-
 	if(bCrouching)
 	{
 		bCrouching=false;
@@ -180,12 +186,40 @@ void AMainCharacter::Jump()
 	{
 		Super::Jump();
 	}
-	
 }
 
 void AMainCharacter::StopJumping()
 {
 	Super::StopJumping();
+}
+
+void AMainCharacter::AdjustCameraLengthUp()
+{
+	if(!CameraBoom) return;
+	
+	if(CameraBoom->TargetArmLength <= 00.f)
+	{
+		return;
+	}
+	else
+	{
+		CameraBoom->TargetArmLength -=30.f;
+	}
+	
+}
+
+void AMainCharacter::AdjustCameraLengthDown()
+{
+	if(!CameraBoom)return;
+	if(CameraBoom->TargetArmLength >= 670.f)
+	{
+		return;
+	}
+	else
+	{
+		CameraBoom->TargetArmLength +=30.f;
+	}
+	
 }
 
 
@@ -721,21 +755,20 @@ void AMainCharacter::ToggleSit()
 
 void AMainCharacter::CrouchButtonPressed()
 {
-	if(!GetCharacterMovement()->IsFalling())
+	if(!GetCharacterMovement()->IsFalling()) // CombatState != ECombatState::ECS_ReloadingState)
 	{
-		// TODO : REWORK CROUCH AND ENSURE RELOAD AND EVERYHITNG WORKS RIGHT 
 		if(bCrouching)
         	{
         		bCrouching=false;
-        		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
-        		GetCharacterMovement()->BrakingFriction=100.f;
+        		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
+        		GetCharacterMovement()->BrakingFriction=3.f;
         		InterpCapsuleHalfHeight();
         	}
         	else
         	{
         		bCrouching=true;
-        		GetCharacterMovement()->MaxWalkSpeed=BaseMovementSpeed;
-        		GetCharacterMovement()->BrakingFriction=3.f;
+        		GetCharacterMovement()->MaxWalkSpeed=CrouchMovementSpeed;
+        		GetCharacterMovement()->BrakingFriction=100.f;
         		InterpCapsuleHalfHeight();
         	}
 	}
@@ -791,14 +824,14 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMainCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacter::MoveRight);
 
-	PlayerInputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
-	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
-
 	PlayerInputComponent->BindAxis("TurnRate", this, &AMainCharacter::TurnAtRate);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AMainCharacter::LookUpAtRate);
 
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMainCharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AMainCharacter::StopJumping);
+
+	PlayerInputComponent->BindAction("AdjustCameraLengthUp", IE_Pressed, this, &AMainCharacter::AdjustCameraLengthUp);
+	PlayerInputComponent->BindAction("AdjustCameraLengthDown", IE_Pressed, this, &AMainCharacter::AdjustCameraLengthDown);
 
 	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AMainCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AMainCharacter::FireButtonReleased);
