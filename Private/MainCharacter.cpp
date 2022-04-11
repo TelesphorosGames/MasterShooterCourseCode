@@ -51,7 +51,8 @@ AMainCharacter::AMainCharacter() :
 	HipTurnRate(75.f),
 	HipLookUpRate(55.f),
 	AimingTurnRate(25.f),
-	AimingLookUpRate(25.f)
+	AimingLookUpRate(25.f),
+	bNothingHit(false)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -322,7 +323,7 @@ void AMainCharacter::FireOneBullet()
 		const bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
 		if (bBeamEnd)
 		{
-			if (ImpactParticles)
+			if (ImpactParticles && bNothingHit == false)
 			{
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
 			}
@@ -429,6 +430,12 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 	if (WeaponTraceHit.bBlockingHit)
 	{
 		OutBeamLocation = WeaponTraceHit.Location;
+		return true;
+	}
+	else
+	{
+		OutBeamLocation= (WeaponTraceEnd);
+		bNothingHit = true;
 		return true;
 	}
 
@@ -945,6 +952,7 @@ void AMainCharacter::StartFireTimer()
 {
 	CombatState = ECombatState::ECS_FireTimerInProgress;
 	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, AutoFireRate);
+	bNothingHit = false;
 }
 
 void AMainCharacter::AutoFireReset()

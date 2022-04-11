@@ -72,6 +72,8 @@ public:
 
 private:
 
+	bool bNothingHit;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My Stuff | Camera", meta = (AllowPrivateAccess = "true"))
 	AItem* CurrentlyLookingAtItem;
 	
