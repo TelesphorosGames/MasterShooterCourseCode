@@ -55,8 +55,17 @@ public:
 	AMainCharacter();
 
 	virtual void Tick(float DeltaTime) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;
 	
 
+protected:
+	
+// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool GetAiming() const { return bAiming ; }
@@ -67,7 +76,7 @@ public:
 
 
 	// Handles finding where our picked up items should interpolate to on our screen
-	FInterpLocation GetInterpLocation(int32 Index);
+	
 
 
 private:
@@ -246,8 +255,7 @@ private:
 	
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	
 	void PlayGunFireSound();
 	void FireOneBullet();
 	void PlayRecoilAnimation();
@@ -331,11 +339,6 @@ protected:
 	
 public:	
 	
-	
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
 	float BaseTurnRate;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
@@ -381,12 +384,11 @@ public:
 	float GetCrosshairSpreadMultiplier() const;
 
 	FVector GetCameraInterpLocation();
-
 	
 	void GetPickupItem(AItem* Item);
 
 	// Returns index in InterpLocations array with lowest item count
 	int32 GetInterpLocationIndex();
-
+	FInterpLocation GetInterpLocation(int32 Index);
 	void IncrementInterpLocItemCount(int32 Index, int32 Amount);
 };

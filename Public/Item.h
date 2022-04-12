@@ -89,9 +89,16 @@ protected:
 
 	//Get Interp Location based on item type and spots available
 	FVector GetInterpLocation();
+	void ItemInterp(float DeltaTime);
 	
+	virtual void InitializeCustomDepth();
 
-public:		
+	virtual void OnConstruction(const FTransform& Transform) override;
+	
+public:
+	
+	virtual void EnableCustomDepth();
+	virtual void DisableCustomDepth();
 	// Used to determine what the item is doing and how we can interact with it.
 	void SetItemState(EItemState State);
 	// Called From the character class when equipping items
@@ -149,7 +156,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	float ZCurveInterpTime = 0.7f;
 	//Handles the actual movement of the item when it is in EquipInterping state
-	void ItemInterp(float DeltaTime);
+
 	float ItemInterpX = 0.f ;
 	float ItemInterpY = 0.f ;
 	//Initial Yaw Offset between camera and item, used to ensure item rotation faces camera
@@ -172,6 +179,16 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	int32 InterpLocIndex;
 
+	// Index of the location we'd like to change at runtime
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	int32 MaterialIndex;
 
+	// Dynamic instance that can be changed at runtime
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	UMaterialInstanceDynamic* DynamicMaterialInstance;
+
+	// Material instance to be used with DynamicMaterialInstance
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	UMaterialInstance* MaterialInstance;
 };
 

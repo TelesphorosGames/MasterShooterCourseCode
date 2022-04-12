@@ -18,7 +18,8 @@ ItemCount(0),
 ItemRarity(EItemRarity::EIR_Common),
 ItemState(EItemState::EIS_OnGround),
 ItemType(EItemType::EIT_MAX),
-InterpLocIndex(0)
+InterpLocIndex(0),
+MaterialIndex(0)
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -59,6 +60,8 @@ void AItem::BeginPlay()
 
 	// Sets initial items on ground to their default, on ground Item state, ready to be picked up
 	SetItemProperties(ItemState);
+
+	InitializeCustomDepth();
 }
 
 void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -255,6 +258,7 @@ void AItem::FinishInterping()
 		
 	}
 	SetActorScale3D(FVector(1.f));
+
 }
 
 FVector AItem::GetInterpLocation()
@@ -319,12 +323,14 @@ void AItem::StartItemCurve(AMainCharacter* Character)
 
 	// Inital yaw direction offset between camera and item, used to interp in ItemInterp
 	InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
+
+	
 }
 
 void AItem::ItemInterp(float DeltaTime)
 {
 	if (!bInterping) return;
-
+	
 	if(CharacterPointer && ItemZCurve)
 	{
 		// Elapsed time since we started Timer for interping item into inventory
@@ -374,5 +380,30 @@ void AItem::ItemInterp(float DeltaTime)
 		
 
 
+	}
+}
+
+void AItem::EnableCustomDepth()
+{
+	ItemMesh->SetRenderCustomDepth(true);
+}
+
+void AItem::DisableCustomDepth()
+{
+	ItemMesh->SetRenderCustomDepth(false);
+	
+}
+
+void AItem::InitializeCustomDepth()
+{
+	DisableCustomDepth();
+}
+
+void AItem::OnConstruction(const FTransform& Transform)
+{
+	if(MaterialInstance)
+	{
+		DynamicMaterialInstance= UMaterialInstanceDynamic::Create(MaterialInstance, this);
+		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
 	}
 }

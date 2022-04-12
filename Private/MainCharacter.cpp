@@ -46,10 +46,10 @@ AMainCharacter::AMainCharacter() :
 	CurrentCapsuleHalfHeight(88.f),
 	StandingCapsuleHalfHeight(88.f),
 	CrouchingCapsuleHalfHeight(44.f),
-	BaseTurnRate(75.f),
-	BaseLookUpRate(55.f),
-	HipTurnRate(75.f),
-	HipLookUpRate(55.f),
+	BaseTurnRate(105.f),
+	BaseLookUpRate(95.f),
+	HipTurnRate(105.f),
+	HipLookUpRate(95.f),
 	AimingTurnRate(25.f),
 	AimingLookUpRate(25.f),
 	bNothingHit(false)
@@ -87,22 +87,16 @@ AMainCharacter::AMainCharacter() :
 	// Create scene components that are used for item locations on screen during pickup
 	WeaponInterpComp = CreateDefaultSubobject<USceneComponent>(TEXT("WeaponInterpolationComponent"));
 	WeaponInterpComp->SetupAttachment(GetFollowCamera());
-	// Create scene components that are used for item locations on screen during pickup
 	InterpComp1 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent1"));
 	InterpComp1->SetupAttachment(GetFollowCamera());
-	// Create scene components that are used for item locations on screen during pickup
 	InterpComp2 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent2"));
 	InterpComp2->SetupAttachment(GetFollowCamera());
-	// Create scene components that are used for item locations on screen during pickup
 	InterpComp3 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent3"));
 	InterpComp3->SetupAttachment(GetFollowCamera());
-	// Create scene components that are used for item locations on screen during pickup
 	InterpComp4 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent4"));
 	InterpComp4->SetupAttachment(GetFollowCamera());
-	// Create scene components that are used for item locations on screen during pickup
 	InterpComp5 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent5"));
 	InterpComp5->SetupAttachment(GetFollowCamera());
-	// Create scene components that are used for item locations on screen during pickup
 	InterpComp6 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent6"));
 	InterpComp6->SetupAttachment(GetFollowCamera());
 }
@@ -110,21 +104,64 @@ AMainCharacter::AMainCharacter() :
 void AMainCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	SetZoomInterp(DeltaTime);
 	CalculateCrosshairSpread(DeltaTime);
 	TraceForItems();
 }
 
-FInterpLocation AMainCharacter::GetInterpLocation(int32 Index)
+// Called to bind functionality to input
+void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	if(Index <= InterpLocations.Num())
-	{
-		return InterpLocations[Index];
-	}
-	return FInterpLocation();
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	check(PlayerInputComponent);
+
+	PlayerInputComponent->BindAxis("MoveForward", this, &AMainCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacter::MoveRight);
+
+	PlayerInputComponent->BindAxis("TurnRate", this, &AMainCharacter::TurnAtRate);
+	PlayerInputComponent->BindAxis("LookUpRate", this, &AMainCharacter::LookUpAtRate);
+
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMainCharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AMainCharacter::StopJumping);
+
+	PlayerInputComponent->BindAction("AdjustCameraLengthUp", IE_Pressed, this, &AMainCharacter::AdjustCameraLengthUp);
+	PlayerInputComponent->BindAction("AdjustCameraLengthDown", IE_Pressed, this,
+									 &AMainCharacter::AdjustCameraLengthDown);
+
+	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AMainCharacter::FireButtonPressed);
+	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AMainCharacter::FireButtonReleased);
+
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AMainCharacter::AimingButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AMainCharacter::AimingButtonReleased);
+
+	PlayerInputComponent->BindAction("Test", IE_Pressed, this, &AMainCharacter::TestButtonPressed);
+	PlayerInputComponent->BindAction("Test", IE_Released, this, &AMainCharacter::TestButtonReleased);
+
+	PlayerInputComponent->BindAction("Sit", IE_Pressed, this, &AMainCharacter::ToggleSit);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMainCharacter::CrouchButtonPressed);
+
+	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMainCharacter::ReloadButtonPressed);
 }
 
+// Called when the game starts or when spawned
+void AMainCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (FollowCamera)
+	{
+		CameraDefaultFOV = FollowCamera->FieldOfView;
+		CameraCurrentFOV = CameraDefaultFOV;
+	}
+
+	//Spawns the default weapon and equips it 
+	EquipWeapon(SpawnDefaultWeapon());
+	InitializeAmmoMap();
+	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+	InitializeInterpLocations();
+}
 
 float AMainCharacter::GetCrosshairSpreadMultiplier() const
 {
@@ -155,7 +192,7 @@ void AMainCharacter::GetPickupItem(AItem* Item)
 	}
 
 	auto Ammo = Cast<AAmmo>(Item);
-	if(Ammo)
+	if (Ammo)
 	{
 		PickupAmmo(Ammo);
 	}
@@ -277,27 +314,6 @@ void AMainCharacter::IncrementOverlappedItemCount(int8 Amount)
 		OverlappedItemCount += Amount;
 		bShouldTraceForItems = true;
 	}
-}
-
-
-// Called when the game starts or when spawned
-void AMainCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (FollowCamera)
-	{
-		CameraDefaultFOV = FollowCamera->FieldOfView;
-		CameraCurrentFOV = CameraDefaultFOV;
-	}
-
-	//Spawns the default weapon and equips it 
-	EquipWeapon(SpawnDefaultWeapon());
-	InitializeAmmoMap();
-	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
-	InitializeInterpLocations();
-
-	
 }
 
 void AMainCharacter::PlayGunFireSound()
@@ -432,14 +448,10 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 		OutBeamLocation = WeaponTraceHit.Location;
 		return true;
 	}
-	else
-	{
-		OutBeamLocation= (WeaponTraceEnd);
-		bNothingHit = true;
-		return true;
-	}
 
-	return false;
+	OutBeamLocation = (WeaponTraceEnd);
+	bNothingHit = true;
+	return true;
 }
 
 void AMainCharacter::AimingButtonPressed()
@@ -504,36 +516,35 @@ void AMainCharacter::SetZoomInterp(float DeltaTime)
 
 void AMainCharacter::InitializeInterpLocations()
 {
-	FInterpLocation WeaponLocation = { WeaponInterpComp, 0};
+	FInterpLocation WeaponLocation = {WeaponInterpComp, 0};
 	InterpLocations.Add(WeaponLocation);
 
-	FInterpLocation ItemLoc1 = {InterpComp1, 0  };
+	FInterpLocation ItemLoc1 = {InterpComp1, 0};
 	InterpLocations.Add(ItemLoc1);
 
-	FInterpLocation ItemLoc2 = {InterpComp2, 0 };
+	FInterpLocation ItemLoc2 = {InterpComp2, 0};
 	InterpLocations.Add(ItemLoc2);
 
-	FInterpLocation ItemLoc3 = {InterpComp3, 0 };
+	FInterpLocation ItemLoc3 = {InterpComp3, 0};
 	InterpLocations.Add(ItemLoc3);
 
-	FInterpLocation ItemLoc4 = {InterpComp4, 0 };
+	FInterpLocation ItemLoc4 = {InterpComp4, 0};
 	InterpLocations.Add(ItemLoc4);
 
-	FInterpLocation ItemLoc5 = {InterpComp5, 0 };
+	FInterpLocation ItemLoc5 = {InterpComp5, 0};
 	InterpLocations.Add(ItemLoc5);
 
-	FInterpLocation ItemLoc6 = {InterpComp6, 0 };
+	FInterpLocation ItemLoc6 = {InterpComp6, 0};
 	InterpLocations.Add(ItemLoc6);
-	
 }
 
 int32 AMainCharacter::GetInterpLocationIndex()
 {
 	int32 LowestIndex = 1;
 	int32 LowestCount = INT_MAX;
-	for(int32 i=1; i < InterpLocations.Num(); i++)
+	for (int32 i = 1; i < InterpLocations.Num(); i++)
 	{
-		if(InterpLocations[i].ItemCount < LowestCount)
+		if (InterpLocations[i].ItemCount < LowestCount)
 		{
 			LowestIndex = i;
 			LowestCount = InterpLocations[i].ItemCount;
@@ -541,18 +552,16 @@ int32 AMainCharacter::GetInterpLocationIndex()
 	}
 
 
-	
 	return LowestIndex;
 }
 
 void AMainCharacter::IncrementInterpLocItemCount(int32 Index, int32 Amount)
 {
-	if(Amount != 1) return;
-	if(InterpLocations.Num() >= Index )
+	if (Amount != 1) return;
+	if (InterpLocations.Num() >= Index)
 	{
 		InterpLocations[Index].ItemCount += Amount;
 	}
-	
 }
 
 
@@ -622,12 +631,14 @@ void AMainCharacter::TraceForItems()
 			if (TraceHitItem && TraceHitItem->GetPickupWidget())
 			{
 				TraceHitItem->GetPickupWidget()->SetVisibility(true);
+				TraceHitItem->EnableCustomDepth();
 
 				if (TraceHitItemLastFrame)
 				{
 					if (TraceHitItem != TraceHitItemLastFrame)
 					{
 						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+						TraceHitItemLastFrame->DisableCustomDepth();
 					}
 				}
 
@@ -636,6 +647,7 @@ void AMainCharacter::TraceForItems()
 			else if (TraceHitItemLastFrame)
 			{
 				TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+				TraceHitItemLastFrame->DisableCustomDepth();
 			}
 		}
 	}
@@ -712,15 +724,15 @@ void AMainCharacter::PickupAmmo(AAmmo* Ammo)
 	if (AmmoMap.Find(Ammo->GetAmmoType()))
 	{
 		// Get the amount of ammo in our ammo map for this type
-		int32 AmmoCount =  AmmoMap[Ammo->GetAmmoType()] ;
+		int32 AmmoCount = AmmoMap[Ammo->GetAmmoType()];
 
 		AmmoCount += Ammo->GetItemCount();
 		AmmoMap[Ammo->GetAmmoType()] = AmmoCount;
 	}
 
-	if(EquippedWeapon->GetAmmoType() == Ammo->GetAmmoType())
+	if (EquippedWeapon->GetAmmoType() == Ammo->GetAmmoType())
 	{
-		if (EquippedWeapon->GetAmmo()==0) { ReloadWeapon() ; }
+		if (EquippedWeapon->GetAmmo() == 0) { ReloadWeapon(); }
 	}
 
 	Ammo->Destroy();
@@ -903,40 +915,6 @@ void AMainCharacter::InterpCapsuleHalfHeight()
 	}
 }
 
-// Called to bind functionality to input
-void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	check(PlayerInputComponent);
-
-	PlayerInputComponent->BindAxis("MoveForward", this, &AMainCharacter::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacter::MoveRight);
-
-	PlayerInputComponent->BindAxis("TurnRate", this, &AMainCharacter::TurnAtRate);
-	PlayerInputComponent->BindAxis("LookUpRate", this, &AMainCharacter::LookUpAtRate);
-
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMainCharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AMainCharacter::StopJumping);
-
-	PlayerInputComponent->BindAction("AdjustCameraLengthUp", IE_Pressed, this, &AMainCharacter::AdjustCameraLengthUp);
-	PlayerInputComponent->BindAction("AdjustCameraLengthDown", IE_Pressed, this, &AMainCharacter::AdjustCameraLengthDown);
-
-	PlayerInputComponent->BindAction("FireButton", IE_Pressed, this, &AMainCharacter::FireButtonPressed);
-	PlayerInputComponent->BindAction("FireButton", IE_Released, this, &AMainCharacter::FireButtonReleased);
-
-	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AMainCharacter::AimingButtonPressed);
-	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AMainCharacter::AimingButtonReleased);
-
-	PlayerInputComponent->BindAction("Test", IE_Pressed, this, &AMainCharacter::TestButtonPressed);
-	PlayerInputComponent->BindAction("Test", IE_Released, this, &AMainCharacter::TestButtonReleased);
-
-	PlayerInputComponent->BindAction("Sit", IE_Pressed, this, &AMainCharacter::ToggleSit);
-	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMainCharacter::CrouchButtonPressed);
-
-	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMainCharacter::ReloadButtonPressed);
-}
-
 void AMainCharacter::FireButtonPressed()
 {
 	bFireButtonPressed = true;
@@ -1008,4 +986,13 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 	}
 
 	return false;
+}
+
+FInterpLocation AMainCharacter::GetInterpLocation(int32 Index)
+{
+	if (Index <= InterpLocations.Num())
+	{
+		return InterpLocations[Index];
+	}
+	return FInterpLocation();
 }
