@@ -255,10 +255,10 @@ void AItem::FinishInterping()
 		// Resetting the struct for the InterpLocation
 		CharacterPointer->IncrementInterpLocItemCount(InterpLocIndex, -1);
 		CharacterPointer->GetPickupItem(this);
-		
 	}
 	SetActorScale3D(FVector(1.f));
-
+	DisableGlowMaterial();
+	DisableCustomDepth();
 }
 
 FVector AItem::GetInterpLocation()
@@ -324,6 +324,7 @@ void AItem::StartItemCurve(AMainCharacter* Character)
 	// Inital yaw direction offset between camera and item, used to interp in ItemInterp
 	InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
 
+	EnableCustomDepth();
 	
 }
 
@@ -405,5 +406,22 @@ void AItem::OnConstruction(const FTransform& Transform)
 	{
 		DynamicMaterialInstance= UMaterialInstanceDynamic::Create(MaterialInstance, this);
 		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
+	}
+	EnableGlowMaterial();
+}
+
+void AItem::EnableGlowMaterial()
+{
+	if(DynamicMaterialInstance)
+	{
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowBlendAlpha"), 0.f);
+	}
+}
+
+void AItem::DisableGlowMaterial()
+{
+	if(DynamicMaterialInstance)
+	{
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowBlendAlpha"), 1.f);
 	}
 }

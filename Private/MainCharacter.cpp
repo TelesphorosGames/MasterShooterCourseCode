@@ -638,8 +638,11 @@ void AMainCharacter::TraceForItems()
 					if (TraceHitItem != TraceHitItemLastFrame)
 					{
 						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
-						TraceHitItemLastFrame->DisableCustomDepth();
+							TraceHitItemLastFrame->DisableCustomDepth();
+						
+						
 					}
+					
 				}
 
 				TraceHitItemLastFrame = TraceHitItem;
@@ -647,7 +650,10 @@ void AMainCharacter::TraceForItems()
 			else if (TraceHitItemLastFrame)
 			{
 				TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
-				TraceHitItemLastFrame->DisableCustomDepth();
+				if(TraceHitItemLastFrame->bInterping==false)
+				{
+					TraceHitItemLastFrame->DisableCustomDepth();
+				}
 			}
 		}
 	}

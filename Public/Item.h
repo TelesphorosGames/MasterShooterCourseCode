@@ -94,6 +94,9 @@ protected:
 	virtual void InitializeCustomDepth();
 
 	virtual void OnConstruction(const FTransform& Transform) override;
+
+	void EnableGlowMaterial();
+	void DisableGlowMaterial();
 	
 public:
 	
@@ -103,6 +106,9 @@ public:
 	void SetItemState(EItemState State);
 	// Called From the character class when equipping items
 	void StartItemCurve(AMainCharacter* Character);
+	// Set to true while interping
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+    bool bInterping = false;
 private:
 
 	// Line traces will collide with item collision boxes to generate HUD elements, etc
@@ -141,9 +147,7 @@ private:
 	// Target location for item to interp to in front of camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	FVector ItemInterpTargetLocation={FVector(0.f)};
-	// Set to true while interping
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
-	bool bInterping = false;
+
 	//Timer that runs when interping begins
 	FTimerHandle ItemPickupInterpTimer;
 	// Pointer to the character
