@@ -165,14 +165,14 @@ private:
 	 the callback function will be called to dictate what to do with the item. 
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
-	float ZCurveInterpTime = 0.7f;
+	float ZCurveInterpTime;
 	//Handles the actual movement of the item when it is in EquipInterping state
 
 	float ItemInterpX = 0.f ;
 	float ItemInterpY = 0.f ;
 	//Initial Yaw Offset between camera and item, used to ensure item rotation faces camera
 	//- Used to match the camera's Yaw direction
-	float InterpInitialYawOffset = 0.f ;
+	// float InterpInitialYawOffset = 0.f ;
 	// Responsible for scaling the item down to 0 when we pick it up
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	UCurveFloat* ItemScaleCurve;
@@ -204,7 +204,7 @@ private:
 	// Curve to drive the dynamic material parameters - makes our gun's flash pulse effect
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
-	class UCurveVector* PulseCurve;
+	UCurveVector* PulseCurve;
     
 	FTimerHandle PulseTimer;
     	
@@ -221,7 +221,9 @@ private:
 	UPROPERTY(VisibleAnywhere,Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	float FresnelReflectFraction;
 	
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	UCurveVector* MaterialInterpPulseCurve;
+    
 	
 	
 };

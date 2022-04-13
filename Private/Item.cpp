@@ -22,10 +22,11 @@ ItemState(EItemState::EIS_OnGround),
 ItemType(EItemType::EIT_MAX),
 InterpLocIndex(0),
 MaterialIndex(0),
-GlowAmount(150.f),
-FresnelExponent(3.f),
+GlowAmount(70.f),
+FresnelExponent(7.f),
 FresnelReflectFraction(4.f),
-PulseCurveTime(5.f)
+PulseCurveTime(2.5f),
+ZCurveInterpTime(1.f)
 {
 	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -272,6 +273,7 @@ void AItem::FinishInterping()
 		// Resetting the struct for the InterpLocation
 		CharacterPointer->IncrementInterpLocItemCount(InterpLocIndex, -1);
 		CharacterPointer->GetPickupItem(this);
+		SetItemState(EItemState::EIS_PickedUp);
 	}
 	SetActorScale3D(FVector(1.f));
 	DisableGlowMaterial();
@@ -310,8 +312,13 @@ void AItem::SetItemState(EItemState State)
 
 void AItem::StartItemCurve(AMainCharacter* Character)
 {
+	
+	GetWorldTimerManager().ClearTimer(PulseTimer);
+	SetItemState(EItemState::EIS_EquipInterping);
+	GetWorldTimerManager().SetTimer(ItemPickupInterpTimer, this, &AItem::FinishInterping, ZCurveInterpTime);
 	CharacterPointer = Character;
-
+	
+	
 	// Get array index in InterLocations with lowest item count
 	InterpLocIndex = Character->GetInterpLocationIndex();
 	// Adds 1 to the item count for this InterpLocation struct - meaning this spot is full, no other item can go here
@@ -324,18 +331,20 @@ void AItem::StartItemCurve(AMainCharacter* Character)
 	// Stores initial location of item when interping begins
 	ItemInterpStartLocation = GetActorLocation();
 	bInterping = true;
-	SetItemState(EItemState::EIS_EquipInterping);
+	EnableCustomDepth();
 
-	GetWorldTimerManager().SetTimer(ItemPickupInterpTimer, this, &AItem::FinishInterping, ZCurveInterpTime);
-
+	
 	//* Getting the initial values for the Yaw directions of the item we're picking up
 	//* and player camera so that we can match the two and the item always faces the item
-	const double CameraRotationYaw = {Character->GetFollowCamera()->GetComponentRotation().Yaw};
-	const double ItemRotationYaw = {GetActorRotation().Yaw};
+
+	
+	// const double CameraRotationYaw = {Character->GetFollowCamera()->GetComponentRotation().Yaw};
+	// const double ItemRotationYaw = {GetActorRotation().Yaw};
 
 	// Inital yaw direction offset between camera and item, used to interp in ItemInterp
-	InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
-	EnableCustomDepth();
+	// InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
+	
+
 	
 }
 
@@ -371,6 +380,9 @@ void AItem::ItemInterp(float DeltaTime)
 		// Vector from item to target location, pointing straight up ( only interping the Z with this curve)
 		
 		const FVector ItemToCamera = FVector{0, 0, (CameraInterpLocation-CurrentItemLocation).Z};
+		UE_LOG(LogTemp,Warning, TEXT("ItemToCamera: %s"), *ItemToCamera.ToString());
+
+		
 
 		// Scale factor to multiply with curve value
 		const float DeltaZ = ItemToCamera.Size();
@@ -384,8 +396,9 @@ void AItem::ItemInterp(float DeltaTime)
 		CurrentItemLocation.X = InterpXValue;
 		CurrentItemLocation.Y = InterpYValue;
 		
-		// Adding curve value to Z component of item's location ( scaled by Delta Z ) 
+		// Adding curve value to Z component of item's location ( scaled by Delta Z )
 		CurrentItemLocation.Z += CurveValue * DeltaZ;
+		
 		// Updates the item's location - does the interpolation
 		SetActorLocation(CurrentItemLocation, true, nullptr, ETeleportType::TeleportPhysics);
 
@@ -393,8 +406,9 @@ void AItem::ItemInterp(float DeltaTime)
 		const FRotator CameraCurrentRotation = {CharacterPointer->GetFollowCamera()->GetComponentRotation()};
 
 		// Camera rotation plus initial yaw offset gets us the Current Item rotation for the interp
-		FRotator ItemRotation = { 0.f, CameraCurrentRotation.Yaw + InterpInitialYawOffset, 0.f};
-
+		FRotator ItemRotation = { 0.f, CameraCurrentRotation.Yaw , 0.f};
+		
+		//+ InterpInitialYawOffset
 		SetActorRotation(ItemRotation, ETeleportType::TeleportPhysics);
 
 
@@ -437,19 +451,52 @@ void AItem::OnConstruction(const FTransform& Transform)
 
 void AItem::UpdatePulseEffect()
 {
-	if(ItemState!=EItemState::EIS_OnGround) return;
+	
+	float ElapsedTime;
+	FVector CurveVaule;
 
-	const float ElapsedTime = { GetWorldTimerManager().GetTimerElapsed(PulseTimer) };
-	if(PulseCurve)
+	switch(ItemState)
 	{
-		const FVector CurveVaule = PulseCurve->GetVectorValue(ElapsedTime);
+		case(EItemState::EIS_OnGround):
+				
+			if(PulseCurve && DynamicMaterialInstance)
+			{
+				ElapsedTime = GetWorldTimerManager().GetTimerElapsed(PulseTimer);
+				
+				CurveVaule = PulseCurve->GetVectorValue(ElapsedTime);
+			}
+			
+			break;
 
+		case(EItemState::EIS_EquipInterping):
+
+			if(MaterialInterpPulseCurve && DynamicMaterialInstance)
+			{
+				ElapsedTime = GetWorldTimerManager().GetTimerElapsed(ItemPickupInterpTimer);
+				CurveVaule = MaterialInterpPulseCurve->GetVectorValue(ElapsedTime);
+			}
+
+			break;
+
+		default: ;
+		
+	}
+	if(DynamicMaterialInstance)
+	{
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Glow Amount"), CurveVaule.X * GlowAmount );
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Fresnel Exponent"), CurveVaule.Y * FresnelExponent );
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("ReflectFractionIn"), CurveVaule.Z * FresnelReflectFraction );
-		
 	}
 	
+	
+
+			
+
+
+
+
+
+
 }
 
 void AItem::EnableGlowMaterial()

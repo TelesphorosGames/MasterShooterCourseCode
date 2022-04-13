@@ -83,10 +83,11 @@ AMainCharacter::AMainCharacter() :
 
 	// Creates the Scene Component used to trach the hand and gun clip movement during reload
 	HandClipLocation = CreateDefaultSubobject<USceneComponent>(TEXT("HandSceneComponent"));
-
+	
 	// Create scene components that are used for item locations on screen during pickup
 	WeaponInterpComp = CreateDefaultSubobject<USceneComponent>(TEXT("WeaponInterpolationComponent"));
 	WeaponInterpComp->SetupAttachment(GetFollowCamera());
+	
 	InterpComp1 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent1"));
 	InterpComp1->SetupAttachment(GetFollowCamera());
 	InterpComp2 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent2"));
@@ -197,6 +198,12 @@ void AMainCharacter::GetPickupItem(AItem* Item)
 	{
 		PickupAmmo(Ammo);
 	}
+	Item->DisableCustomDepth();
+	if (bFireButtonPressed)
+	{
+		FireWeapon();
+	}
+	
 }
 
 FRotator AMainCharacter::GetLookAtRotationYaw(FVector Target) const
@@ -327,31 +334,36 @@ void AMainCharacter::PlayGunFireSound()
 
 void AMainCharacter::FireOneBullet()
 {
-	const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
-	if (BarrelSocket)
+	if(CombatState==ECombatState::ECS_Unoccupied)
 	{
-		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(EquippedWeapon->GetItemMesh());
-		if (MuzzleFlash)
-		{
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
-		}
-
-		FVector BeamEnd;
-		const bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
-		if (bBeamEnd)
-		{
-			if (ImpactParticles && bNothingHit == false)
-			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
-			}
-			if (BeamParticles)
-			{
-				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
-					GetWorld(), BeamParticles, SocketTransform);
-				Beam->SetVectorParameter(FName("Target"), BeamEnd);
-			}
-		}
+		const USkeletalMeshSocket* BarrelSocket = EquippedWeapon->GetItemMesh()->GetSocketByName("BarrelSocket");
+        	if (BarrelSocket)
+        	{
+        		const FTransform SocketTransform = BarrelSocket->GetSocketTransform(EquippedWeapon->GetItemMesh());
+        		if (MuzzleFlash)
+        		{
+        			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
+        		}
+        
+        		FVector BeamEnd;
+        		const bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
+        		if (bBeamEnd)
+        		{
+        			if (ImpactParticles && bNothingHit == false)
+        			{
+        				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
+        			}
+        			if (BeamParticles)
+        			{
+        				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+        					GetWorld(), BeamParticles, SocketTransform);
+        				Beam->SetVectorParameter(FName("Target"), BeamEnd);
+        			}
+        		}
+        	}
 	}
+	
+	
 }
 
 void AMainCharacter::PlayRecoilAnimation()
@@ -638,21 +650,25 @@ void AMainCharacter::TraceForItems()
 				{
 					if (TraceHitItem != TraceHitItemLastFrame)
 					{
-						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);						
-						TraceHitItemLastFrame->DisableCustomDepth();
-						
-						
+						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+						if(TraceHitItemLastFrame->bInterping==false)
+						{
+							TraceHitItemLastFrame->DisableCustomDepth();
+						}
 					}
 				}
 				TraceHitItemLastFrame = TraceHitItem;
+
+
+				
 			}
 			else if (TraceHitItemLastFrame)
 			{
 				TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
 				if(TraceHitItemLastFrame->bInterping==false)
-				{
-					TraceHitItemLastFrame->DisableCustomDepth();
-				}
+                {
+                	TraceHitItemLastFrame->DisableCustomDepth();
+                }
 			}
 		}
 	}
@@ -708,7 +724,27 @@ void AMainCharacter::TestButtonPressed()
 {
 	if (TraceHitItem)
 	{
-		TraceHitItem->StartItemCurve(this);
+		if(CombatState==ECombatState::ECS_Unoccupied)
+		{
+			AWeapon* WeaponHit = Cast<AWeapon>(TraceHitItem);
+			if(WeaponHit)
+         			{
+         				CombatState=ECombatState::ECS_PickingUpWeapon;
+         			}
+			else
+			{
+				AAmmo* AmmoHit = Cast<AAmmo>(TraceHitItem);
+				if(AmmoHit)
+				{
+					CombatState=ECombatState::ECS_Unoccupied;
+				}
+			}
+			TraceHitItem->StartItemCurve(this);
+			
+			
+			
+		}
+		
 	}
 }
 
@@ -718,8 +754,10 @@ void AMainCharacter::TestButtonReleased()
 
 void AMainCharacter::SwapWeapon(AWeapon* WeaponToSwap)
 {
+	
 	DropWeapon();
 	EquipWeapon(WeaponToSwap);
+	CombatState=ECombatState::ECS_Unoccupied;
 	TraceHitItem = nullptr;
 	TraceHitItemLastFrame = nullptr;
 }
@@ -740,8 +778,16 @@ void AMainCharacter::PickupAmmo(AAmmo* Ammo)
 	{
 		if (EquippedWeapon->GetAmmo() == 0) { ReloadWeapon(); }
 	}
-
+	if(CombatState==ECombatState::ECS_PickingUpAmmo)
+	{
+		CombatState=ECombatState::ECS_Unoccupied;
+	}
+	
 	Ammo->Destroy();
+	if (bFireButtonPressed)
+	{
+		FireWeapon();
+	}
 }
 
 void AMainCharacter::InitializeAmmoMap()
@@ -801,8 +847,7 @@ bool AMainCharacter::CarryingAmmo()
 
 void AMainCharacter::FinishReloading()
 {
-	CombatState = ECombatState::ECS_Unoccupied;
-
+	
 	if (bAimingButtonPressed)
 	{
 		Aim();
@@ -834,10 +879,16 @@ void AMainCharacter::FinishReloading()
 			AmmoMap.Add(AmmoType, CarriedAmmo);
 		}
 	}
+
+	if(CombatState== ECombatState::ECS_PickingUpAmmo || CombatState == ECombatState::ECS_PickingUpWeapon) return;
+	CombatState = ECombatState::ECS_Unoccupied;
+	
 	if (bFireButtonPressed)
-	{
-		FireWeapon();
-	}
+     	{
+     		FireWeapon();
+     	}
+	
+
 }
 
 void AMainCharacter::GrabClip()
