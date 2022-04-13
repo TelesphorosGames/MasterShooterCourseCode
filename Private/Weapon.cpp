@@ -75,6 +75,7 @@ void AWeapon::StopFalling()
 {
 	bFalling=false;
 	SetItemState(EItemState::EIS_OnGround);
+	StartPulseTimer();
 }
 
 bool AWeapon::ClipIsFull()

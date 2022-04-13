@@ -158,6 +158,7 @@ void AMainCharacter::BeginPlay()
 
 	//Spawns the default weapon and equips it 
 	EquipWeapon(SpawnDefaultWeapon());
+	EquippedWeapon->DisableGlowMaterial();
 	InitializeAmmoMap();
 	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 	InitializeInterpLocations();
@@ -637,14 +638,12 @@ void AMainCharacter::TraceForItems()
 				{
 					if (TraceHitItem != TraceHitItemLastFrame)
 					{
-						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
-							TraceHitItemLastFrame->DisableCustomDepth();
+						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);						
+						TraceHitItemLastFrame->DisableCustomDepth();
 						
 						
 					}
-					
 				}
-
 				TraceHitItemLastFrame = TraceHitItem;
 			}
 			else if (TraceHitItemLastFrame)
@@ -701,6 +700,7 @@ void AMainCharacter::DropWeapon()
 
 		EquippedWeapon->SetItemState(EItemState::EIS_Falling);
 		EquippedWeapon->ThrowWeapon();
+		EquippedWeapon->EnableGlowMaterial();
 	}
 }
 

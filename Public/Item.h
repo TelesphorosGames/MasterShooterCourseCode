@@ -95,11 +95,10 @@ protected:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
+
+public:
 	void EnableGlowMaterial();
 	void DisableGlowMaterial();
-	
-public:
-	
 	virtual void EnableCustomDepth();
 	virtual void DisableCustomDepth();
 	// Used to determine what the item is doing and how we can interact with it.
@@ -109,6 +108,14 @@ public:
 	// Set to true while interping
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
     bool bInterping = false;
+
+	
+	void UpdatePulseEffect();
+
+	void ResetPulseTimer();
+	
+	void StartPulseTimer();
+	
 private:
 
 	// Line traces will collide with item collision boxes to generate HUD elements, etc
@@ -194,5 +201,29 @@ private:
 	// Material instance to be used with DynamicMaterialInstance
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	UMaterialInstance* MaterialInstance;
+	// Curve to drive the dynamic material parameters - makes our gun's flash pulse effect
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	class UCurveVector* PulseCurve;
+    
+	FTimerHandle PulseTimer;
+    	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	float PulseCurveTime;
+    
+	// Linked to our PulseCurve and our GlowAmount parameter on our flashy lines material
+	UPROPERTY(VisibleAnywhere,Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	float GlowAmount;
+    
+	UPROPERTY(VisibleAnywhere,Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	float FresnelExponent;
+    
+	UPROPERTY(VisibleAnywhere,Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
+	float FresnelReflectFraction;
+	
+
+	
+	
 };
+
 

@@ -8,8 +8,10 @@
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
+#include "Curves/CurveVector.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
+
 
 // Sets default values
 AItem::AItem()  :
@@ -19,8 +21,13 @@ ItemRarity(EItemRarity::EIR_Common),
 ItemState(EItemState::EIS_OnGround),
 ItemType(EItemType::EIT_MAX),
 InterpLocIndex(0),
-MaterialIndex(0)
+MaterialIndex(0),
+GlowAmount(150.f),
+FresnelExponent(3.f),
+FresnelReflectFraction(4.f),
+PulseCurveTime(5.f)
 {
+	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -62,6 +69,16 @@ void AItem::BeginPlay()
 	SetItemProperties(ItemState);
 
 	InitializeCustomDepth();
+
+	StartPulseTimer();
+}
+
+// Called every frame
+void AItem::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	ItemInterp(DeltaTime);
+	UpdatePulseEffect();
 }
 
 void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -281,12 +298,7 @@ FVector AItem::GetInterpLocation()
 	return {};
 }
 
-// Called every frame
-void AItem::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	ItemInterp(DeltaTime);
-}
+
 
 void AItem::SetItemState(EItemState State)
 {
@@ -323,10 +335,23 @@ void AItem::StartItemCurve(AMainCharacter* Character)
 
 	// Inital yaw direction offset between camera and item, used to interp in ItemInterp
 	InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
-
 	EnableCustomDepth();
 	
 }
+
+void AItem::ResetPulseTimer()
+{
+	StartPulseTimer();
+}
+
+void AItem::StartPulseTimer()
+{
+	if(ItemState==EItemState::EIS_OnGround)
+	{
+		GetWorldTimerManager().SetTimer(PulseTimer, this, &AItem::ResetPulseTimer, PulseCurveTime);
+	}
+}
+
 
 void AItem::ItemInterp(float DeltaTime)
 {
@@ -408,6 +433,23 @@ void AItem::OnConstruction(const FTransform& Transform)
 		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
 	}
 	EnableGlowMaterial();
+}
+
+void AItem::UpdatePulseEffect()
+{
+	if(ItemState!=EItemState::EIS_OnGround) return;
+
+	const float ElapsedTime = { GetWorldTimerManager().GetTimerElapsed(PulseTimer) };
+	if(PulseCurve)
+	{
+		const FVector CurveVaule = PulseCurve->GetVectorValue(ElapsedTime);
+
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Glow Amount"), CurveVaule.X * GlowAmount );
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Fresnel Exponent"), CurveVaule.Y * FresnelExponent );
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("ReflectFractionIn"), CurveVaule.Z * FresnelReflectFraction );
+		
+	}
+	
 }
 
 void AItem::EnableGlowMaterial()
