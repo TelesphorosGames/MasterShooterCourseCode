@@ -115,7 +115,13 @@ public:
 	void ResetPulseTimer();
 	
 	void StartPulseTimer();
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff | Item Properties")
+	bool bIsOverlappingChar =false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Item Properties")
+	int32 DistanceToCharacter;
+    	
 private:
 
 	// Line traces will collide with item collision boxes to generate HUD elements, etc
@@ -224,7 +230,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	UCurveVector* MaterialInterpPulseCurve;
     
-	
 	
 };
 

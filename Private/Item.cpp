@@ -95,14 +95,21 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 			ShooterCharacter->IncrementOverlappedItemCount(-1);
 			if(ShooterCharacter->GetItemBeingLookedAt()==this)
 			{
-				PickupWidget->SetVisibility(false);
-			
+					PickupWidget->SetVisibility(false);
 			}
-			if(ShooterCharacter->GetOverlappedItemCount()<=0&&ShooterCharacter->GetItemBeingLookedAt()!=nullptr)
+			if(ShooterCharacter->GetOverlappedItemCount()<=0||ShooterCharacter->GetItemBeingLookedAt()!=nullptr)
 			{
-				ShooterCharacter->GetItemBeingLookedAt()->PickupWidget->SetVisibility(false);
+				if(ShooterCharacter->GetItemBeingLookedAt())
+				{
+					if(ShooterCharacter->GetItemBeingLookedAt()->GetPickupWidget())
+					{
+						ShooterCharacter->GetItemBeingLookedAt()->GetPickupWidget()->SetVisibility(false);
+					}
+					ShooterCharacter->GetItemBeingLookedAt()->DisableCustomDepth();
+				}
 				
 			}
+			bIsOverlappingChar=false;
 		}
 	}
 }
@@ -116,7 +123,7 @@ void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 		if (ShooterCharacter)
 		{
 			ShooterCharacter->IncrementOverlappedItemCount(1);
-			
+			bIsOverlappingChar = true;
 		}
 	}
 }
@@ -312,8 +319,9 @@ void AItem::SetItemState(EItemState State)
 
 void AItem::StartItemCurve(AMainCharacter* Character)
 {
-	
+	if(ItemState!=EItemState::EIS_OnGround) return;
 	GetWorldTimerManager().ClearTimer(PulseTimer);
+	
 	SetItemState(EItemState::EIS_EquipInterping);
 	GetWorldTimerManager().SetTimer(ItemPickupInterpTimer, this, &AItem::FinishInterping, ZCurveInterpTime);
 	CharacterPointer = Character;
@@ -390,8 +398,8 @@ void AItem::ItemInterp(float DeltaTime)
 		const FVector CurrentLocation = GetActorLocation();
 
 		// Used to interpolate the X and Y positions of the item
-		const float InterpXValue = FMath::FInterpTo(CurrentLocation.X, CameraInterpLocation.X, DeltaTime, 30.f);
-		const float InterpYValue = FMath::FInterpTo(CurrentLocation.Y, CameraInterpLocation.Y, DeltaTime, 30.f);
+		const float InterpXValue = FMath::FInterpTo(CurrentLocation.X, CameraInterpLocation.X, DeltaTime, 1.f);
+		const float InterpYValue = FMath::FInterpTo(CurrentLocation.Y, CameraInterpLocation.Y, DeltaTime, 40.f);
 
 		CurrentItemLocation.X = InterpXValue;
 		CurrentItemLocation.Y = InterpYValue;
@@ -406,7 +414,7 @@ void AItem::ItemInterp(float DeltaTime)
 		const FRotator CameraCurrentRotation = {CharacterPointer->GetFollowCamera()->GetComponentRotation()};
 
 		// Camera rotation plus initial yaw offset gets us the Current Item rotation for the interp
-		FRotator ItemRotation = { 0.f, CameraCurrentRotation.Yaw , 0.f};
+		FRotator ItemRotation = { CameraCurrentRotation.Pitch, CameraCurrentRotation.Yaw, 0 };
 		
 		//+ InterpInitialYawOffset
 		SetActorRotation(ItemRotation, ETeleportType::TeleportPhysics);

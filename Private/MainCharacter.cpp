@@ -21,6 +21,7 @@
 // Sets default values
 AMainCharacter::AMainCharacter() :
 
+	bNothingHit(false),
 	CurrentlyLookingAtItem(nullptr),
 	bAiming(false),
 	CameraDefaultFOV(0.f),
@@ -40,9 +41,8 @@ AMainCharacter::AMainCharacter() :
 	StartingAssaultRifleAmmo(120),
 	CombatState(ECombatState::ECS_Unoccupied),
 	MovementStatus(EMovementStatus::EMS_Standing),
-	bShouldFire(true),
-	BaseMovementSpeed(675.f),
 	CrouchMovementSpeed(225.f),
+	BaseMovementSpeed(675.f),
 	CurrentCapsuleHalfHeight(88.f),
 	StandingCapsuleHalfHeight(88.f),
 	CrouchingCapsuleHalfHeight(44.f),
@@ -52,7 +52,7 @@ AMainCharacter::AMainCharacter() :
 	HipLookUpRate(95.f),
 	AimingTurnRate(25.f),
 	AimingLookUpRate(25.f),
-	bNothingHit(false)
+	bShouldFire(true)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -160,6 +160,7 @@ void AMainCharacter::BeginPlay()
 	//Spawns the default weapon and equips it 
 	EquipWeapon(SpawnDefaultWeapon());
 	EquippedWeapon->DisableGlowMaterial();
+	EquippedWeapon->GetItemMesh()->bCastDynamicShadow = true;
 	InitializeAmmoMap();
 	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 	InitializeInterpLocations();
@@ -493,6 +494,7 @@ void AMainCharacter::Aim()
 		BaseTurnRate = AimingTurnRate;
 		BaseLookUpRate = AimingLookUpRate;
 		GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
+		bShouldTraceForItems=true;
 	}
 }
 
@@ -503,6 +505,16 @@ void AMainCharacter::StopAiming()
 		bAiming = false;
 		BaseTurnRate = HipTurnRate;
 		BaseLookUpRate = HipLookUpRate;
+		bShouldTraceForItems=false;
+		if(GetItemBeingLookedAt())
+		{
+			if(GetItemBeingLookedAt()->GetPickupWidget())
+            			{
+            				GetItemBeingLookedAt()->GetPickupWidget()->SetVisibility(false);
+            				GetItemBeingLookedAt()->DisableCustomDepth();
+            			}
+		}
+			
 	}
 	if (bCrouching)
 	{
@@ -643,21 +655,31 @@ void AMainCharacter::TraceForItems()
 			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
 			if (TraceHitItem && TraceHitItem->GetPickupWidget())
 			{
-				TraceHitItem->GetPickupWidget()->SetVisibility(true);
-				TraceHitItem->EnableCustomDepth();
+				FVector TraceHitItemLoc = TraceHitItem->GetActorLocation();
+				FVector CharacterLoc = GetActorLocation();
+				double DistanceToItem = UKismetMathLibrary::Vector_Distance(CharacterLoc, TraceHitItemLoc);
 
-				if (TraceHitItemLastFrame)
+				int32 DistanceInt = UKismetMathLibrary::FCeil(DistanceToItem);
+				TraceHitItem->DistanceToCharacter = (DistanceInt / 100) ;
+				if(TraceHitItem->bIsOverlappingChar==true || bAiming)
 				{
-					if (TraceHitItem != TraceHitItemLastFrame)
-					{
-						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
-						if(TraceHitItemLastFrame->bInterping==false)
-						{
-							TraceHitItemLastFrame->DisableCustomDepth();
-						}
-					}
+					TraceHitItem->GetPickupWidget()->SetVisibility(true);
+                    				TraceHitItem->EnableCustomDepth();
+                    
+                    				if (TraceHitItemLastFrame)
+                    				{
+                    					if (TraceHitItem != TraceHitItemLastFrame)
+                    					{
+                    						TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
+                    						if(TraceHitItemLastFrame->bInterping==false)
+                    						{
+                    							TraceHitItemLastFrame->DisableCustomDepth();
+                    						}
+                    					}
+                    				}
+                    				TraceHitItemLastFrame = TraceHitItem;
 				}
-				TraceHitItemLastFrame = TraceHitItem;
+				
 
 
 				
@@ -722,14 +744,20 @@ void AMainCharacter::DropWeapon()
 
 void AMainCharacter::TestButtonPressed()
 {
+	if(bAiming)return;
 	if (TraceHitItem)
 	{
 		if(CombatState==ECombatState::ECS_Unoccupied)
 		{
+			
 			AWeapon* WeaponHit = Cast<AWeapon>(TraceHitItem);
 			if(WeaponHit)
          			{
-         				CombatState=ECombatState::ECS_PickingUpWeapon;
+						if(WeaponHit->bIsOverlappingChar)
+							{
+							WeaponHit->StartItemCurve(this);
+							CombatState=ECombatState::ECS_PickingUpWeapon;
+							}
          			}
 			else
 			{
@@ -737,13 +765,15 @@ void AMainCharacter::TestButtonPressed()
 				if(AmmoHit)
 				{
 					CombatState=ECombatState::ECS_Unoccupied;
+					if(AmmoHit->bIsOverlappingChar)
+					{
+						AmmoHit->StartItemCurve(this);
+					}
+					
 				}
 			}
-			TraceHitItem->StartItemCurve(this);
-			
-			
-			
 		}
+		
 		
 	}
 }
@@ -756,10 +786,13 @@ void AMainCharacter::SwapWeapon(AWeapon* WeaponToSwap)
 {
 	
 	DropWeapon();
+	EquippedWeapon->GetItemMesh()->bCastDynamicShadow =false;
 	EquipWeapon(WeaponToSwap);
 	CombatState=ECombatState::ECS_Unoccupied;
 	TraceHitItem = nullptr;
 	TraceHitItemLastFrame = nullptr;
+	WeaponToSwap->GetItemMesh()->bCastDynamicShadow=true;
+	
 }
 
 void AMainCharacter::PickupAmmo(AAmmo* Ammo)
@@ -778,10 +811,7 @@ void AMainCharacter::PickupAmmo(AAmmo* Ammo)
 	{
 		if (EquippedWeapon->GetAmmo() == 0) { ReloadWeapon(); }
 	}
-	if(CombatState==ECombatState::ECS_PickingUpAmmo)
-	{
-		CombatState=ECombatState::ECS_Unoccupied;
-	}
+	
 	
 	Ammo->Destroy();
 	if (bFireButtonPressed)
@@ -880,7 +910,7 @@ void AMainCharacter::FinishReloading()
 		}
 	}
 
-	if(CombatState== ECombatState::ECS_PickingUpAmmo || CombatState == ECombatState::ECS_PickingUpWeapon) return;
+	if(CombatState==ECombatState::ECS_PickingUpWeapon) return;
 	CombatState = ECombatState::ECS_Unoccupied;
 	
 	if (bFireButtonPressed)
@@ -985,8 +1015,10 @@ void AMainCharacter::FireButtonReleased()
 
 void AMainCharacter::StartFireTimer()
 {
-	CombatState = ECombatState::ECS_FireTimerInProgress;
-	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, AutoFireRate);
+	
+		CombatState = ECombatState::ECS_FireTimerInProgress;
+		GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, AutoFireRate);
+	
 	bNothingHit = false;
 }
 

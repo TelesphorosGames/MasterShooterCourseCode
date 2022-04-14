@@ -9,7 +9,7 @@
 AAmmo::AAmmo() 
 {
 	AmmoMesh=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AmmoMesh"));
-	SetRootComponent(AmmoMesh);
+	AmmoMesh->SetupAttachment(GetRootComponent());
 
 	GetCollisionBox()->SetupAttachment(GetRootComponent());
 	GetPickupWidget()->SetupAttachment(GetRootComponent());
@@ -120,6 +120,7 @@ void AAmmo::AmmoSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* 
 		auto Character = Cast<AMainCharacter>(OtherActor);
 		if(Character)
 		{
+			
 			StartItemCurve(Character);
 			AmmoCollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
