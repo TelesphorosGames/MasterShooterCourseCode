@@ -253,8 +253,11 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
 	TArray<FInterpLocation> InterpLocations;
-
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta=(AllowPrivateAccess = true))
+	TArray<AItem*> Inventory;
+
+	const int32 InventorySize = 6;
 
 protected:
 	

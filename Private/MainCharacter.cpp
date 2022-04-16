@@ -159,6 +159,8 @@ void AMainCharacter::BeginPlay()
 
 	//Spawns the default weapon and equips it 
 	EquipWeapon(SpawnDefaultWeapon());
+	Inventory.Add(EquippedWeapon);
+	EquippedWeapon->SetSlotIndex(0);
 	EquippedWeapon->DisableGlowMaterial();
 	EquippedWeapon->GetItemMesh()->bCastDynamicShadow = true;
 	InitializeAmmoMap();
@@ -191,7 +193,18 @@ void AMainCharacter::GetPickupItem(AItem* Item)
 	auto Weapon = Cast<AWeapon>(Item);
 	if (Weapon)
 	{
-		SwapWeapon(Weapon);
+		if(Inventory.Num()<InventorySize)
+		{
+			Weapon->SetSlotIndex(Inventory.Num());
+			Inventory.Add(Weapon);
+			CombatState=ECombatState::ECS_Unoccupied;
+			Weapon->SetItemState(EItemState::EIS_PickedUp);
+		}
+		else
+		{
+			SwapWeapon(Weapon);
+		}
+		
 	}
 
 	auto Ammo = Cast<AAmmo>(Item);

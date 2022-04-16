@@ -60,6 +60,8 @@ public:
 	FORCEINLINE USoundCue* GetPickupSound() const { return PickupSound ;}
 	FORCEINLINE USoundCue* GetEquipSound() const {return EquipSound ;}
 	FORCEINLINE int32 GetItemCount() const { return ItemCount ; }
+	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex ; }
+	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index ; }
 
 
 	
@@ -229,7 +231,18 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	UCurveVector* MaterialInterpPulseCurve;
-    
+	//Background color for this item, shown in the inventory hud widget
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
+	UTexture2D* IconBackground;
+	// Icon for this item shown in inventory hud widget
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
+	UTexture2D* IconItem;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
+	UTexture2D* AmmoItem;
+	// Slot in the inventory array
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
+	int32 SlotIndex;
 	
 };
 

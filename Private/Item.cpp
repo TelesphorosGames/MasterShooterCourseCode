@@ -22,11 +22,12 @@ ItemState(EItemState::EIS_OnGround),
 ItemType(EItemType::EIT_MAX),
 InterpLocIndex(0),
 MaterialIndex(0),
-GlowAmount(70.f),
+GlowAmount(30.f),
 FresnelExponent(7.f),
 FresnelReflectFraction(4.f),
 PulseCurveTime(2.5f),
-ZCurveInterpTime(1.f)
+ZCurveInterpTime(1.f),
+SlotIndex(0)
 {
 	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -264,7 +265,33 @@ void AItem::SetItemProperties(EItemState State)
 		
 		break;
 
+	case EItemState::EIS_PickedUp:
 		
+
+	if(PickupWidget)
+	{
+		PickupWidget->SetVisibility(false);
+	}
+		
+		if(ItemMesh)
+		{
+			GetItemMesh()->SetEnableGravity(false);
+			ItemMesh->SetSimulatePhysics(false);
+			ItemMesh->SetVisibility(false);
+			ItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+			ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+			//TODO : SOCKET WEAPON TO CHARACTER
+		}
+
+		AreaSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		
+		CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		
+		break;
 		
 	default: ;
 	}
@@ -388,10 +415,7 @@ void AItem::ItemInterp(float DeltaTime)
 		// Vector from item to target location, pointing straight up ( only interping the Z with this curve)
 		
 		const FVector ItemToCamera = FVector{0, 0, (CameraInterpLocation-CurrentItemLocation).Z};
-		UE_LOG(LogTemp,Warning, TEXT("ItemToCamera: %s"), *ItemToCamera.ToString());
-
 		
-
 		// Scale factor to multiply with curve value
 		const float DeltaZ = ItemToCamera.Size();
 
@@ -413,7 +437,7 @@ void AItem::ItemInterp(float DeltaTime)
 		// Camera's rotation this frame
 		const FRotator CameraCurrentRotation = {CharacterPointer->GetFollowCamera()->GetComponentRotation()};
 
-		// Camera rotation plus initial yaw offset gets us the Current Item rotation for the interp
+		// Camera rotation to match the item's interp to 
 		FRotator ItemRotation = { CameraCurrentRotation.Pitch, CameraCurrentRotation.Yaw, 0 };
 		
 		//+ InterpInitialYawOffset
