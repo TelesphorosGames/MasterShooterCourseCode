@@ -140,6 +140,13 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("Test", IE_Pressed, this, &AMainCharacter::TestButtonPressed);
 	PlayerInputComponent->BindAction("Test", IE_Released, this, &AMainCharacter::TestButtonReleased);
 
+	PlayerInputComponent->BindAction("GKey", IE_Pressed, this, &AMainCharacter::GKeyPressed);
+	PlayerInputComponent->BindAction("1Key", IE_Pressed, this, &AMainCharacter::OneKeyPressed);
+	PlayerInputComponent->BindAction("2Key", IE_Pressed, this, &AMainCharacter::TwoKeyPressed);
+	PlayerInputComponent->BindAction("3Key", IE_Pressed, this, &AMainCharacter::ThreeKeyPressed);
+	PlayerInputComponent->BindAction("4Key", IE_Pressed, this, &AMainCharacter::FourKeyPressed);
+	PlayerInputComponent->BindAction("5Key", IE_Pressed, this, &AMainCharacter::FiveKeyPressed);
+
 	PlayerInputComponent->BindAction("Sit", IE_Pressed, this, &AMainCharacter::ToggleSit);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMainCharacter::CrouchButtonPressed);
 
@@ -203,6 +210,7 @@ void AMainCharacter::GetPickupItem(AItem* Item)
 		else
 		{
 			SwapWeapon(Weapon);
+			
 		}
 		
 	}
@@ -211,6 +219,7 @@ void AMainCharacter::GetPickupItem(AItem* Item)
 	if (Ammo)
 	{
 		PickupAmmo(Ammo);
+		
 	}
 	Item->DisableCustomDepth();
 	if (bFireButtonPressed)
@@ -522,10 +531,14 @@ void AMainCharacter::StopAiming()
 		if(GetItemBeingLookedAt())
 		{
 			if(GetItemBeingLookedAt()->GetPickupWidget())
-            			{
-            				GetItemBeingLookedAt()->GetPickupWidget()->SetVisibility(false);
-            				GetItemBeingLookedAt()->DisableCustomDepth();
-            			}
+            	{
+            		GetItemBeingLookedAt()->GetPickupWidget()->SetVisibility(false);
+					if(GetItemBeingLookedAt()->bInterping==false)
+					{
+						GetItemBeingLookedAt()->DisableCustomDepth();
+					}
+            		
+            	}
 		}
 			
 	}
@@ -666,6 +679,10 @@ void AMainCharacter::TraceForItems()
 		if (ItemTraceResult.bBlockingHit)
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
+			if(TraceHitItem && TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
+			{
+				TraceHitItem = nullptr;
+			}
 			if (TraceHitItem && TraceHitItem->GetPickupWidget())
 			{
 				FVector TraceHitItemLoc = TraceHitItem->GetActorLocation();
@@ -733,9 +750,21 @@ void AMainCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 				HandSocket->AttachActor(WeaponToEquip, GetMesh());
 			}
 		}
+
+		//Brodcasting the current slot index and the new slot index to the inventory bar widget
+		// -1 = no equipped weapon yet, no need to play ( reverse ) item animation
+		if(EquippedWeapon == nullptr)
+		{
+			EquipItemDelegate.Broadcast(-1, WeaponToEquip->GetSlotIndex());
+		}
+		else
+		{
+			EquipItemDelegate.Broadcast(EquippedWeapon->GetSlotIndex(), WeaponToEquip->GetSlotIndex());
+		}
+		
 		// Assigning the Equipped Weapon Variable
 		EquippedWeapon = WeaponToEquip;
-
+		
 		/* Ensuring that once the weapon is equipped, it doesn't interfere with other
 		 *Collision channels	*/
 		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
@@ -770,6 +799,7 @@ void AMainCharacter::TestButtonPressed()
 							{
 							WeaponHit->StartItemCurve(this);
 							CombatState=ECombatState::ECS_PickingUpWeapon;
+							TraceHitItem = nullptr;
 							}
          			}
 			else
@@ -795,9 +825,57 @@ void AMainCharacter::TestButtonReleased()
 {
 }
 
+void AMainCharacter::GKeyPressed()
+{
+	if(EquippedWeapon->GetSlotIndex()==0) return;
+	
+	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), 0);
+}
+
+void AMainCharacter::OneKeyPressed()
+{
+	if(EquippedWeapon->GetSlotIndex()==1) return;
+	
+	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), 1);
+	
+}
+
+void AMainCharacter::TwoKeyPressed()
+{
+	if(EquippedWeapon->GetSlotIndex()==2) return;
+	
+	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), 2);
+}
+
+void AMainCharacter::ThreeKeyPressed()
+{
+	if(EquippedWeapon->GetSlotIndex()==3) return;
+	
+	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), 3);
+}
+
+void AMainCharacter::FourKeyPressed()
+{
+	if(EquippedWeapon->GetSlotIndex()==4) return;
+	
+	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), 4);
+}
+
+void AMainCharacter::FiveKeyPressed()
+{
+	if(EquippedWeapon->GetSlotIndex()==5) return;
+	
+	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), 5);
+}
+
 void AMainCharacter::SwapWeapon(AWeapon* WeaponToSwap)
 {
-	
+	if( Inventory.Num() -1 >= EquippedWeapon->GetSlotIndex())
+	{
+		Inventory[EquippedWeapon->GetSlotIndex()] = WeaponToSwap;
+		WeaponToSwap->SetSlotIndex(EquippedWeapon->GetSlotIndex());
+		
+	}
 	DropWeapon();
 	EquippedWeapon->GetItemMesh()->bCastDynamicShadow =false;
 	EquipWeapon(WeaponToSwap);
@@ -1013,6 +1091,25 @@ void AMainCharacter::InterpCapsuleHalfHeight()
 
 		GetCapsuleComponent()->SetCapsuleHalfHeight(StandingCapsuleHalfHeight, true);
 	}
+}
+
+void AMainCharacter::ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemIndex)
+{
+	if (CurrentIndex == NewItemIndex || NewItemIndex >= Inventory.Num()) return;
+	if(CombatState==ECombatState::ECS_Unoccupied)
+	{
+		auto OldEquippedWeapon = EquippedWeapon;
+        	auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
+        
+        	EquipWeapon(NewWeapon);
+        
+        	OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
+        	NewWeapon->SetItemState(EItemState::EIS_Equipped);
+	}
+	
+
+
+	
 }
 
 void AMainCharacter::FireButtonPressed()

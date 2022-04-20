@@ -106,7 +106,11 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 					{
 						ShooterCharacter->GetItemBeingLookedAt()->GetPickupWidget()->SetVisibility(false);
 					}
-					ShooterCharacter->GetItemBeingLookedAt()->DisableCustomDepth();
+					if(ShooterCharacter->GetItemBeingLookedAt()->bInterping==false)
+					{
+						ShooterCharacter->GetItemBeingLookedAt()->DisableCustomDepth();
+					}
+					
 				}
 				
 			}
@@ -226,6 +230,7 @@ void AItem::SetItemProperties(EItemState State)
             GetItemMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
             GetItemMesh()->SetCollisionResponseToAllChannels(ECR_Ignore);
             GetItemMesh()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+			GetItemMesh()->SetVisibility(true);
 	
 		}
 		
@@ -293,6 +298,7 @@ void AItem::SetItemProperties(EItemState State)
 		
 		break;
 		
+		
 	default: ;
 	}
 
@@ -307,7 +313,7 @@ void AItem::FinishInterping()
 		// Resetting the struct for the InterpLocation
 		CharacterPointer->IncrementInterpLocItemCount(InterpLocIndex, -1);
 		CharacterPointer->GetPickupItem(this);
-		SetItemState(EItemState::EIS_PickedUp);
+		
 	}
 	SetActorScale3D(FVector(1.f));
 	DisableGlowMaterial();

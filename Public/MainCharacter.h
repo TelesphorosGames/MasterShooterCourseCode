@@ -46,6 +46,7 @@ struct FInterpLocation
 	int32 ItemCount;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
 
 UCLASS()
 class MASTERSHOOTERCOURSE_API AMainCharacter : public ACharacter
@@ -259,12 +260,19 @@ private:
 
 	const int32 InventorySize = 6;
 
+	UPROPERTY(BlueprintAssignable, Category = "My Stuff | Delegates", meta=(AllowPrivateAccess = true))
+	FEquipItemDelegate EquipItemDelegate;
+	
+	
+
 protected:
 	
 	void PlayGunFireSound();
 	void FireOneBullet();
 	void PlayRecoilAnimation();
+	
 
+	
 	// Called When Fire Button is pressed
 	void FireWeapon();
 
@@ -304,6 +312,12 @@ protected:
 	void TestButtonPressed();
 	void TestButtonReleased();
 
+	void GKeyPressed();
+	void OneKeyPressed();
+	void TwoKeyPressed();
+	void ThreeKeyPressed();
+	void FourKeyPressed();
+	void FiveKeyPressed();
 	
 	void SwapWeapon(AWeapon* WeaponToSwap);
 	void PickupAmmo(class AAmmo* Ammo);
@@ -338,7 +352,7 @@ protected:
 	
 	void InterpCapsuleHalfHeight();
 
-	
+	void ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemIndex);
 
 
 	
