@@ -22,9 +22,9 @@ ItemState(EItemState::EIS_OnGround),
 ItemType(EItemType::EIT_MAX),
 InterpLocIndex(0),
 MaterialIndex(0),
-GlowAmount(30.f),
-FresnelExponent(7.f),
-FresnelReflectFraction(4.f),
+GlowAmount(0.f),
+FresnelExponent(0.f),
+FresnelReflectFraction(0.f),
 PulseCurveTime(2.5f),
 ZCurveInterpTime(1.f),
 SlotIndex(0),
@@ -284,7 +284,7 @@ void AItem::SetItemProperties(EItemState State)
 		{
 			GetItemMesh()->SetEnableGravity(false);
 			ItemMesh->SetSimulatePhysics(false);
-			ItemMesh->SetVisibility(false);
+			ItemMesh->SetVisibility(true);
 			ItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 			ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -524,6 +524,9 @@ void AItem::UpdatePulseEffect()
 	}
 	if(DynamicMaterialInstance)
 	{
+		GlowAmount = 10.f;
+		FresnelExponent = 2.f;
+		FresnelReflectFraction = .5f;
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Glow Amount"), CurveVaule.X * GlowAmount );
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Fresnel Exponent"), CurveVaule.Y * FresnelExponent );
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("ReflectFractionIn"), CurveVaule.Z * FresnelReflectFraction );

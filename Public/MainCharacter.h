@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AmmoType.h"
+#include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/Character.h"
 
 
@@ -62,7 +63,8 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;
-	
+	void InitializeWeaponSockets();
+
 
 protected:
 	
@@ -273,13 +275,20 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Inventory", meta =(AllowPrivateAccess = true))
 	int32 HighlightedSlot;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Inventory", meta =(AllowPrivateAccess = true))
+	AWeapon* WeaponInExchange;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Inventory", meta =(AllowPrivateAccess = true))
+	AWeapon* NewWeaponInExchange;
+
 protected:
 	
 	void PlayGunFireSound();
 	void FireOneBullet();
 	void PlayRecoilAnimation();
-	
 
+	UFUNCTION(BlueprintCallable)
+	void AttachWeaponToSocket(AWeapon* Weapon);
 	
 	// Called When Fire Button is pressed
 	void FireWeapon();
@@ -350,6 +359,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void FinishEquipping();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishDisarming();
 	
 	// Handle Animations for moving the clip during reloading
 	UFUNCTION(BlueprintCallable)

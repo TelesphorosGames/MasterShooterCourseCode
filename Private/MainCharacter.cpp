@@ -53,7 +53,8 @@ AMainCharacter::AMainCharacter() :
 	AimingTurnRate(25.f),
 	AimingLookUpRate(25.f),
 	bShouldFire(true),
-	HighlightedSlot(-1)
+	HighlightedSlot(-1),
+	WeaponInExchange(nullptr)
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -155,6 +156,15 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMainCharacter::ReloadButtonPressed);
 }
 
+void AMainCharacter::InitializeWeaponSockets()
+{
+	const USkeletalMeshSocket* TestSocket = GetMesh()->GetSocketByName(FName("GunSocket1"));
+
+	
+}
+	
+	
+
 // Called when the game starts or when spawned
 void AMainCharacter::BeginPlay()
 {
@@ -175,6 +185,7 @@ void AMainCharacter::BeginPlay()
 	InitializeAmmoMap();
 	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 	InitializeInterpLocations();
+	InitializeWeaponSockets();
 }
 
 float AMainCharacter::GetCrosshairSpreadMultiplier() const
@@ -205,6 +216,7 @@ void AMainCharacter::GetPickupItem(AItem* Item)
 		if (Inventory.Num() < InventorySize)
 		{
 			Weapon->SetSlotIndex(Inventory.Num());
+			AttachWeaponToSocket(Weapon);
 			Inventory.Add(Weapon);
 			CombatState = ECombatState::ECS_Unoccupied;
 			Weapon->SetItemState(EItemState::EIS_PickedUp);
@@ -393,6 +405,51 @@ void AMainCharacter::PlayRecoilAnimation()
 		AnimInstance->Montage_Play(HipFireMontage);
 		AnimInstance->Montage_JumpToSection(FName("StartFire"));
 	}
+}
+
+void AMainCharacter::AttachWeaponToSocket(AWeapon* Weapon)
+{
+	FAttachmentTransformRules Fatr(FAttachmentTransformRules::SnapToTargetIncludingScale);
+
+	if(Weapon->GetSlotIndex()==0)
+	{
+		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket3"));
+		
+		return;
+	}
+	if(Weapon->GetSlotIndex()==1)
+	{
+		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket1"));
+		
+		return;
+	}
+	if(Weapon->GetSlotIndex()==2)
+	{
+		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket2"));
+		
+		return;
+	}
+	if(Weapon->GetSlotIndex()==3)
+	{
+		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket3"));
+
+		return;
+		
+	}
+	if(Weapon->GetSlotIndex()==4)
+	{
+		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket4"));
+	
+		return;
+	}
+	if(Weapon->GetSlotIndex()==5)
+	{
+		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket5"));
+		
+		return;
+	}
+
+		
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -812,6 +869,14 @@ void AMainCharacter::DropWeapon()
 		EquippedWeapon->SetItemState(EItemState::EIS_Falling);
 		EquippedWeapon->ThrowWeapon();
 		EquippedWeapon->EnableGlowMaterial();
+
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if(AnimInstance && EquipMontage)
+		{
+			AnimInstance->Montage_Play(EquipMontage);
+			AnimInstance->Montage_JumpToSection(FName("ThrowWeapon"));
+		}
+		
 	}
 }
 
@@ -855,7 +920,6 @@ void AMainCharacter::TestButtonReleased()
 void AMainCharacter::GKeyPressed()
 {
 	if (EquippedWeapon->GetSlotIndex() == 0) return;
-
 	ExchangeInventoryItems(EquippedWeapon->GetSlotIndex(), 0);
 }
 
@@ -1039,6 +1103,12 @@ void AMainCharacter::FinishReloading()
 void AMainCharacter::FinishEquipping()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	
+}
+
+void AMainCharacter::FinishDisarming()
+{
+	WeaponInExchange = nullptr;
 }
 
 void AMainCharacter::GrabClip()
@@ -1127,22 +1197,24 @@ void AMainCharacter::ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemInd
 	if (CurrentIndex == NewItemIndex || NewItemIndex >= Inventory.Num()) return;
 	if (CombatState == ECombatState::ECS_Unoccupied)
 	{
+		WeaponInExchange=EquippedWeapon;
 		auto OldEquippedWeapon = EquippedWeapon;
 		auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
-
-		EquipWeapon(NewWeapon);
-
-		OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
-		NewWeapon->SetItemState(EItemState::EIS_Equipped);
-
-		CombatState = ECombatState::ECS_PickingUpWeapon;
-
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && EquipMontage)
 		{
 			AnimInstance->Montage_Play(EquipMontage, 1.0f);
 			AnimInstance->Montage_JumpToSection(FName("Equip"));
 		}
+		EquipWeapon(NewWeapon);
+		
+		
+		OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
+		NewWeapon->SetItemState(EItemState::EIS_Equipped);
+
+		CombatState = ECombatState::ECS_PickingUpWeapon;
+
+		
 	}
 }
 
