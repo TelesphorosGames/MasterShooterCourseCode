@@ -62,6 +62,7 @@ public:
 	FORCEINLINE int32 GetItemCount() const { return ItemCount ; }
 	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex ; }
 	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index ; }
+	FORCEINLINE void SetCharacterInventoryFull(bool Full) { bCharacterInventoryFull = Full ; }
 
 
 	
@@ -243,6 +244,9 @@ private:
 	// Slot in the inventory array
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
 	int32 SlotIndex;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
+	bool bCharacterInventoryFull;
 	
 };
 

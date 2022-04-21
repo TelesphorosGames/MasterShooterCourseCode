@@ -47,6 +47,7 @@ struct FInterpLocation
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHighlightIconDelegate, int32, SlotIndex, bool, bStartAnimation);
 
 UCLASS()
 class MASTERSHOOTERCOURSE_API AMainCharacter : public ACharacter
@@ -208,6 +209,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
 	UAnimMontage* ReloadMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	UAnimMontage* EquipMontage;
+	
 	//Used to track the gun's clip location during reload so we can attach it to our hand
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
 	FTransform ClipTransform;
@@ -263,7 +267,11 @@ private:
 	UPROPERTY(BlueprintAssignable, Category = "My Stuff | Delegates", meta=(AllowPrivateAccess = true))
 	FEquipItemDelegate EquipItemDelegate;
 	
-	
+	UPROPERTY(BlueprintAssignable, Category = "My Stuff | Delegates", meta=(AllowPrivateAccess = true))
+	FHighlightIconDelegate HighlightIconDelegate;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Inventory", meta =(AllowPrivateAccess = true))
+	int32 HighlightedSlot;
 
 protected:
 	
@@ -340,6 +348,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
 
+	UFUNCTION(BlueprintCallable)
+	void FinishEquipping();
+	
 	// Handle Animations for moving the clip during reloading
 	UFUNCTION(BlueprintCallable)
 	void GrabClip();
@@ -354,7 +365,9 @@ protected:
 
 	void ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemIndex);
 
+	int32 GetEmptyInventorySlot();
 
+	
 	
 public:	
 	
@@ -410,4 +423,6 @@ public:
 	int32 GetInterpLocationIndex();
 	FInterpLocation GetInterpLocation(int32 Index);
 	void IncrementInterpLocItemCount(int32 Index, int32 Amount);
+	void HighlightInventorySlot();
+	void UnHighlightInventorySlot();
 };

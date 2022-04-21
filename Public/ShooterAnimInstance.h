@@ -100,6 +100,9 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	bool bReloading;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	bool bEquipping;
+
 	// Will be used to determine which aim offset blendspace to use in our animation blueprint 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	EOffsetState OffsetState;

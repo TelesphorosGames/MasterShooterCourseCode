@@ -46,6 +46,7 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		bCrouchingForAnims = ShooterCharacter->GetCrouching();
 
 		bReloading = ShooterCharacter->GetCombatState() == ECombatState::ECS_ReloadingState;
+		bEquipping = ShooterCharacter->GetCombatState() == ECombatState::ECS_PickingUpWeapon;
 		//Get later Speed of Character from Velocity - speed from falling is not taken into account
 		FVector Velocity = ShooterCharacter->GetVelocity();
 		Velocity.Z = 0.f;
@@ -131,7 +132,7 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 {
 	if (bTurningInPlace) /* TURNING IN PLACE  */
 	{
-		if (bReloading)
+		if (bReloading || bEquipping) // Turning in place, while reloading or equipping
 		{
 			RecoilWeight = 1.f; // Full reload animation, Full Recoil Animation
 			if(bCrouchingForAnims)
@@ -149,7 +150,7 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 	{
 		if(bCrouchingForAnims) // Crouching not turning
 		{
-			if (bReloading) // Crouching, reloading
+			if (bReloading || bEquipping) // Crouching, while reloading or equipping
 			{
 				RecoilWeight = 1.f;  // Full Reload animation
 				ReloadWeight = 0.f;
@@ -181,7 +182,7 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 				}
 					
 			}
-			else if (bReloading) // standing upright, not aiming, and reloading
+			else if (bReloading || bEquipping) // standing upright, not aiming, and reloading or Equipping
 			{
 				RecoilWeight=.9f; // Full Recoil Animation
 				ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM

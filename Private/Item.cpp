@@ -27,7 +27,8 @@ FresnelExponent(7.f),
 FresnelReflectFraction(4.f),
 PulseCurveTime(2.5f),
 ZCurveInterpTime(1.f),
-SlotIndex(0)
+SlotIndex(0),
+bCharacterInventoryFull(false)
 {
 	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -94,6 +95,7 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 		{
 			
 			ShooterCharacter->IncrementOverlappedItemCount(-1);
+			ShooterCharacter->UnHighlightInventorySlot();
 			if(ShooterCharacter->GetItemBeingLookedAt()==this)
 			{
 					PickupWidget->SetVisibility(false);
@@ -313,6 +315,7 @@ void AItem::FinishInterping()
 		// Resetting the struct for the InterpLocation
 		CharacterPointer->IncrementInterpLocItemCount(InterpLocIndex, -1);
 		CharacterPointer->GetPickupItem(this);
+		CharacterPointer->UnHighlightInventorySlot();
 		
 	}
 	SetActorScale3D(FVector(1.f));
