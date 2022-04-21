@@ -19,14 +19,14 @@ ItemName(FString("Default")),
 ItemCount(0),
 ItemRarity(EItemRarity::EIR_Common),
 ItemState(EItemState::EIS_OnGround),
+ZCurveInterpTime(1.f),
 ItemType(EItemType::EIT_MAX),
 InterpLocIndex(0),
 MaterialIndex(0),
+PulseCurveTime(2.5f),
 GlowAmount(0.f),
 FresnelExponent(0.f),
 FresnelReflectFraction(0.f),
-PulseCurveTime(2.5f),
-ZCurveInterpTime(1.f),
 SlotIndex(0),
 bCharacterInventoryFull(false)
 {
@@ -144,25 +144,25 @@ void AItem::SetActiveStars()
 
 	switch (ItemRarity)
 	{
-	case EItemRarity::EIR_Damaged:
-		ActiveStars[1] = true;
-		break;
 	case EItemRarity::EIR_Common:
 		ActiveStars[1] = true;
-		ActiveStars[2] = true;
 		break;
-	case EItemRarity::EIR_Uncommon:
+	case EItemRarity::EIR_Great:
 		ActiveStars[1] = true;
 		ActiveStars[2] = true;
-		ActiveStars[3] = true;
 		break;
 	case EItemRarity::EIR_Rare:
 		ActiveStars[1] = true;
 		ActiveStars[2] = true;
 		ActiveStars[3] = true;
+		break;
+	case EItemRarity::EIR_Superb:
+		ActiveStars[1] = true;
+		ActiveStars[2] = true;
+		ActiveStars[3] = true;
 		ActiveStars[4] = true;
 		break;
-	case EItemRarity::EIR_Legendary:
+	case EItemRarity::EIR_Epic:
 		ActiveStars[1] = true;
 		ActiveStars[2] = true;
 		ActiveStars[3] = true;
@@ -482,12 +482,64 @@ void AItem::InitializeCustomDepth()
 
 void AItem::OnConstruction(const FTransform& Transform)
 {
-	if(MaterialInstance)
+	
+
+
+	/* Load Data from ItemRarity data table
+	*/
+	//Path to the actual data table : Apparently important to not change after set here. ?? I am guessing
+	FString RarityTablePath(TEXT("DataTable'/Game/MyStuff/DataTables/ItemRarityTable.ItemRarityTable'"));
+	UDataTable* RarityTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *RarityTablePath));
+	if(RarityTableObject)
 	{
-		DynamicMaterialInstance= UMaterialInstanceDynamic::Create(MaterialInstance, this);
-		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
+		FItemRarityTable* RarityRow = nullptr;
+		switch(ItemRarity)
+		{
+		case EItemRarity::EIR_Common:
+		RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Common"), TEXT(""));
+			
+			break;
+		case EItemRarity::EIR_Great:
+			RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Great"), TEXT(""));
+			
+			break;
+		case EItemRarity::EIR_Rare:
+			RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Rare"), TEXT(""));
+			
+			break;
+		case EItemRarity::EIR_Superb:
+			RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Superb"), TEXT(""));
+			
+			break;
+		case EItemRarity::EIR_Epic:
+			RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Epic"), TEXT(""));
+			
+			break;
+
+			
+		default:
+			;
+		}
+		if(RarityRow)
+		{
+			RowGlowColor=RarityRow->GlowColor;
+			RowLightColor=RarityRow->LightColor;
+			RowDarkColor=RarityRow->DarkColor;
+			RowNumberOfStars=RarityRow->NumberOfStars;
+			IconBackground=RarityRow->IconBackground;
+			if(GetItemMesh())
+			{
+				GetItemMesh()->SetCustomDepthStencilValue(RarityRow->CustomDepthStencil);
+			}
+		}
 	}
-	EnableGlowMaterial();
+	if(MaterialInstance)
+     	{
+     		DynamicMaterialInstance= UMaterialInstanceDynamic::Create(MaterialInstance, this);
+			DynamicMaterialInstance->SetVectorParameterValue(TEXT("Fresnel Color"), RowGlowColor);
+     		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
+     		EnableGlowMaterial();
+     	}
 }
 
 void AItem::UpdatePulseEffect()
@@ -525,8 +577,8 @@ void AItem::UpdatePulseEffect()
 	if(DynamicMaterialInstance)
 	{
 		GlowAmount = 10.f;
-		FresnelExponent = 2.f;
-		FresnelReflectFraction = .5f;
+		FresnelExponent = 8.f;
+		FresnelReflectFraction = .005f;
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Glow Amount"), CurveVaule.X * GlowAmount );
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Fresnel Exponent"), CurveVaule.Y * FresnelExponent );
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("ReflectFractionIn"), CurveVaule.Z * FresnelReflectFraction );

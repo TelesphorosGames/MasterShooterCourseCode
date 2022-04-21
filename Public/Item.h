@@ -5,16 +5,20 @@
 #include "CoreMinimal.h"
 #include "MainCharacter.h"
 #include "GameFramework/Actor.h"
+#include "Engine/DataTable.h"
+
+
+
 #include "Item.generated.h"
 
 UENUM(BlueprintType)
 enum class EItemRarity : uint8
 {
-	EIR_Damaged UMETA(DisplayName="Damaged"),
 	EIR_Common UMETA(DisplayName="Common"),
-	EIR_Uncommon UMETA(DisplayName="Uncommon"),
+	EIR_Great UMETA(DisplayName="Great"),
 	EIR_Rare UMETA(DisplayName="Rare"),
-	EIR_Legendary UMETA(DisplayName="Legendary"),
+	EIR_Superb UMETA(DisplayName="Superb"),
+	EIR_Epic UMETA(DisplayName="Epic"),
 
 	EIR_MAX UMETA(DisplayName="DefaultMAX")
 };
@@ -39,6 +43,31 @@ enum class EItemType : uint8
 	EIT_Weapon UMETA(DisplayName="Weapon"),
 
 	EIT_MAX UMETA(DisplayName="DefaultMAX")
+};
+
+USTRUCT(BlueprintType)
+struct FItemRarityTable : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor GlowColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor LightColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor DarkColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 NumberOfStars;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* IconBackground;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 CustomDepthStencil;
+	
 };
 
 UCLASS()
@@ -232,9 +261,7 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Item Properties", meta = (AllowPrivateAccess="true"))
 	UCurveVector* MaterialInterpPulseCurve;
-	//Background color for this item, shown in the inventory hud widget
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
-	UTexture2D* IconBackground;
+	
 	// Icon for this item shown in inventory hud widget
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
 	UTexture2D* IconItem;
@@ -247,6 +274,22 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Inventory", meta = (AllowPrivateAccess="true"))
 	bool bCharacterInventoryFull;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UDataTable* ItemRarityDataTable;
+
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	FLinearColor RowGlowColor;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	FLinearColor RowLightColor;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	FLinearColor RowDarkColor;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	int32 RowNumberOfStars;
+	//Background color image for this item, shown in the inventory hud widget
+	UPROPERTY(EditAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	class UTexture2D* IconBackground;
+	
 	
 };
 
