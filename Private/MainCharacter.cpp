@@ -1203,8 +1203,24 @@ void AMainCharacter::ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemInd
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && EquipMontage)
 		{
+			int32 Rand = FMath::RandRange(1,2);
+			switch(Rand)
+			{
+			case 1:
 			AnimInstance->Montage_Play(EquipMontage, 1.0f);
 			AnimInstance->Montage_JumpToSection(FName("Equip"));
+				break;
+
+			case 2:
+				AnimInstance->Montage_Play(EquipMontage, 1.0f);
+				AnimInstance->Montage_JumpToSection(FName("Equip2"));
+
+				break;
+
+			default:
+				;
+			}
+			
 		}
 		EquipWeapon(NewWeapon);
 		
