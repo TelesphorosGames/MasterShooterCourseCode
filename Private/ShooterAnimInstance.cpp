@@ -5,10 +5,10 @@
 
 
 #include "MainCharacter.h"
+#include "Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
-
 #include "Kismet/KismetMathLibrary.h"
+
 
 
 UShooterAnimInstance::UShooterAnimInstance() :
@@ -116,6 +116,10 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		}
 	}
 
+	if(ShooterCharacter && ShooterCharacter->GetEquippedWeapon())
+	{
+		EquippedWeaponType = ShooterCharacter->GetEquippedWeapon()->GetWeaponType();
+	}
 	TurnInPlace();
 	Lean(DeltaTime);
 	SetRecoilAndReloadWeights();

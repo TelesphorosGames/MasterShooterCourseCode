@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WeaponTypes.h"
 #include "Animation/AnimInstance.h"
 
 
@@ -126,7 +127,8 @@ private:
 	// True when we are turning in place, used with RecoilWeight and ReloadWeight
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
 	bool bTurningInPlace;
-	
-	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Category= "My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	EWeaponType EquippedWeaponType;
 	
 };

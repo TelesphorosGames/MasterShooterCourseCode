@@ -830,14 +830,32 @@ void AMainCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 		/*Creates the Skeletal Mesh Socket pointer to spawn the weapon into, called
 		 *"RightHandSocket" in Unreal Engine
 		 */
-		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
-		if (HandSocket)
+		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("SMG_Socket"));
+		const USkeletalMeshSocket* ARHandSocket = GetMesh()->GetSocketByName(FName("AR_Socket"));
+		switch(WeaponToEquip->GetWeaponType())
 		{
-			if (HandSocket)
+		case EWeaponType::EWT_SubmachineGun:
+            			if (HandSocket)
+            			{
+            				HandSocket->AttachActor(WeaponToEquip, GetMesh());
+            			}
+		break;
+
+		case EWeaponType::EWT_AssaultRifle:
+			if (ARHandSocket)
 			{
-				HandSocket->AttachActor(WeaponToEquip, GetMesh());
+				ARHandSocket->AttachActor(WeaponToEquip, GetMesh());
 			}
+
+
+			break;
+		default:
+			;
 		}
+		
+
+		
+		
 
 		//Brodcasting the current slot index and the new slot index to the inventory bar widget
 		// -1 = no equipped weapon yet, no need to play ( reverse ) item animation

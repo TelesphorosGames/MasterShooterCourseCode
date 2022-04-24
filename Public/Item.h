@@ -92,8 +92,21 @@ public:
 	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex ; }
 	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index ; }
 	FORCEINLINE void SetCharacterInventoryFull(bool Full) { bCharacterInventoryFull = Full ; }
+	FORCEINLINE void SetPickupSound(USoundCue* Sound){ PickupSound = Sound ; }
+	FORCEINLINE void SetEquipSound(USoundCue* Sound){ EquipSound = Sound ; }
+	FORCEINLINE void SetItemName(FString Name) { ItemName = Name ; }
+	FORCEINLINE void SetIconItem(UTexture2D* Icon) { IconItem = Icon; }
+	FORCEINLINE void SetAmmoIcon(UTexture2D* Icon) { AmmoItem = Icon ; }
+	FORCEINLINE void SetMaterialInstance(UMaterialInstance* Instance) {MaterialInstance = Instance ; }
+	FORCEINLINE UMaterialInstance* GetMaterialInstance() const { return MaterialInstance ; }
+	FORCEINLINE void SetDynamicMaterialInstance(UMaterialInstanceDynamic* Instance) {DynamicMaterialInstance = Instance ; }
+	FORCEINLINE UMaterialInstanceDynamic* GetDynamicMaterialInstance() const { return DynamicMaterialInstance ; }
+	FORCEINLINE void SetMaterialIndex(int32 Index) {MaterialIndex = Index ; }
+	FORCEINLINE int32 GetMaterialIndex() const { return MaterialIndex ; }
+	FORCEINLINE FLinearColor GetGlowColor() const { return RowGlowColor ; }
+	
 
-
+	
 	
 protected:
 	

@@ -79,7 +79,7 @@ public:
 	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return TraceHitItemLastFrame; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	FORCEINLINE bool GetCrouching() const {return bCrouching; }
-
+	FORCEINLINE class AWeapon* GetEquippedWeapon() const { return EquippedWeapon ; } 
 
 	// Handles finding where our picked up items should interpolate to on our screen
 	
