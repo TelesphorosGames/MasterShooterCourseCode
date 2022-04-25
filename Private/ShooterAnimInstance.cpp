@@ -7,6 +7,7 @@
 #include "MainCharacter.h"
 #include "Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 
 
@@ -254,7 +255,8 @@ void UShooterAnimInstance::TurnInPlace()
 		{
 			bTurningInPlace = false;
 		}
-		
+
+	
 		
 
 		if (GEngine)
@@ -265,6 +267,53 @@ void UShooterAnimInstance::TurnInPlace()
 			                                 FString::Printf(TEXT("Root Yaw Offset: %f"), RootYawOffset));
 		}
 	}
+}
+
+void UShooterAnimInstance::AdjustAimOffset(float& OutYaw, float& OutPitch, float InYaw, float InPitch)
+{
+	
+	if(!ShooterCharacter) return;
+	
+	if(ShooterCharacter->GetEquippedWeapon())
+	{
+		FVector2D ViewportSize;
+		FVector BulletTarget = ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetChildComponent(5)->GetComponentLocation();
+		FVector2D BulletTarget2d;
+		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), BulletTarget, BulletTarget2d);
+		
+		if(GEngine && GEngine->GameViewport)
+		{
+			GEngine->GameViewport->GetViewportSize(ViewportSize);
+
+		float ViewportYRange = UKismetMathLibrary:: NormalizeToRange(ViewportSize.Y, 0, 1);
+			
+		    float YPercentOffset = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.Y, 0, ViewportSize.Y);
+			float XPercentOffset = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.X, 0, ViewportSize.X);
+
+			float PitchOffsetNorm = UKismetMathLibrary::NormalizeAxis(Pitch);
+
+			float PitchOffset = UKismetMathLibrary::NormalizeToRange(Pitch, -180, 180);
+
+			
+
+			// UE_LOG(LogTemp,Warning,TEXT("Pitch Offset: %f"), PitchOffset);
+			// UE_LOG(LogTemp,Warning,TEXT("Y Percent Offset :%f"), YPercentOffset);
+			// UE_LOG(LogTemp,Warning,TEXT("X Percent Offset :%f"), XPercentOffset);
+
+
+			
+			OutPitch = UKismetMathLibrary::MapRangeClamped(YPercentOffset, 0,ViewportSize.Y, 0, 1);
+			
+		}
+			
+
+
+		
+	}
+
+
+
+	
 }
 
 void UShooterAnimInstance::Lean(float DeltaTime)

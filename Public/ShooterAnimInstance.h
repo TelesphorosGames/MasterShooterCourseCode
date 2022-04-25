@@ -41,6 +41,9 @@ protected:
 
 	// Will handle the turning in place variables
 	void TurnInPlace();
+	
+	UFUNCTION(BlueprintCallable)
+	void AdjustAimOffset(float &OutYaw, float &OutPitch, float InYaw = 0.f, float InPitch =0.f);
 
 	//Handles Calculations for leaning while running
 	void Lean(float DeltaTime);
@@ -96,6 +99,12 @@ private:
 	// Our character's pitch value used for aim offset
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	float Pitch;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	float UpdatedPitch;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	float UpdatedYaw;
 
 	// Used to re-center our character when reloading to prevent an animation offset for the gun's clip
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
