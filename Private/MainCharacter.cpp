@@ -18,6 +18,7 @@
 #include "Components/WidgetComponent.h"
 
 
+
 // Sets default values
 AMainCharacter::AMainCharacter() :
 
@@ -570,6 +571,8 @@ void AMainCharacter::Aim()
 		BaseLookUpRate = AimingLookUpRate;
 		GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
 		bShouldTraceForItems = true;
+		
+		
 	}
 }
 

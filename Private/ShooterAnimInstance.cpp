@@ -5,6 +5,7 @@
 
 
 #include "MainCharacter.h"
+#include "SAdvancedRotationInputBox.h"
 #include "Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -131,6 +132,9 @@ void UShooterAnimInstance::NativeInitializeAnimation()
 {
 	// Super::NativeInitializeAnimation();
 	ShooterCharacter = Cast<AMainCharacter>(TryGetPawnOwner());
+	UpdatedPitch = Pitch;
+	UpdatedYaw=MovementOffsetYaw;
+	
 }
 
 void UShooterAnimInstance::SetRecoilAndReloadWeights()
@@ -269,48 +273,62 @@ void UShooterAnimInstance::TurnInPlace()
 	}
 }
 
-void UShooterAnimInstance::AdjustAimOffset(float& OutYaw, float& OutPitch, float InYaw, float InPitch)
+void UShooterAnimInstance::AdjustAimOffset(float DeltaTime, float& OutYaw, float& OutPitch, float InYaw, float InPitch)
 {
 	
-	if(!ShooterCharacter) return;
+	if(!ShooterCharacter || bReloading) return;
 	
 	if(ShooterCharacter->GetEquippedWeapon())
 	{
 		FVector2D ViewportSize;
 		FVector BulletTarget = ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetChildComponent(5)->GetComponentLocation();
-		FVector2D BulletTarget2d;
+		// FVector BulletTarget;
+		
 		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), BulletTarget, BulletTarget2d);
+
+
 		
 		if(GEngine && GEngine->GameViewport)
 		{
 			GEngine->GameViewport->GetViewportSize(ViewportSize);
-
-		float ViewportYRange = UKismetMathLibrary:: NormalizeToRange(ViewportSize.Y, 0, 1);
-			
-		    float YPercentOffset = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.Y, 0, ViewportSize.Y);
-			float XPercentOffset = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.X, 0, ViewportSize.X);
-
-			float PitchOffsetNorm = UKismetMathLibrary::NormalizeAxis(Pitch);
-
-			float PitchOffset = UKismetMathLibrary::NormalizeToRange(Pitch, -180, 180);
-
-			
-
-			// UE_LOG(LogTemp,Warning,TEXT("Pitch Offset: %f"), PitchOffset);
-			// UE_LOG(LogTemp,Warning,TEXT("Y Percent Offset :%f"), YPercentOffset);
-			// UE_LOG(LogTemp,Warning,TEXT("X Percent Offset :%f"), XPercentOffset);
-
-
-			
-			OutPitch = UKismetMathLibrary::MapRangeClamped(YPercentOffset, 0,ViewportSize.Y, 0, 1);
-			
-		}
-			
-
-
 		
+			
+			float YScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.Y, 0, ViewportSize.Y);
+			float XScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.X, 0, ViewportSize.X);
+			float PitchHolder = UpdatedPitch;
+			
+		if(UpdatedPitch> Pitch+UpdatedPitch || UpdatedPitch < Pitch-UpdatedPitch) UpdatedPitch = Pitch;
+			if(!(YScreenSpacePercent > .47f && YScreenSpacePercent < .53f))
+			{
+				
+				if(YScreenSpacePercent < .45f )
+                		{
+                			UpdatedPitch -= 3.f;
+					UE_LOG(LogTemp,Warning, TEXT("Pitch : %f"), Pitch);
+					UE_LOG(LogTemp,Warning, TEXT("UpdatedPitch : %f"), UpdatedPitch);
+                		}
+				if(YScreenSpacePercent > .55f)
+                		{
+                			UpdatedPitch+= 3.f;
+                		}
+				PitchHolder=UpdatedPitch;
+			}
+			
+				if(UpdatedYaw>180|| UpdatedYaw < -180) UpdatedYaw =MovementOffsetYaw;
+			if(!(XScreenSpacePercent > .47f && XScreenSpacePercent < .53f))
+			{
+				if(XScreenSpacePercent < .45f)
+				{
+					UpdatedYaw-=3.f;
+				}
+				if(XScreenSpacePercent > .55f)
+				{
+					UpdatedYaw+=3.f;
+				}
+			}
+		
+		}
 	}
-
 
 
 	

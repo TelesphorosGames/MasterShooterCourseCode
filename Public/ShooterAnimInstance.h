@@ -37,13 +37,15 @@ public:
 	virtual void NativeInitializeAnimation() override;
 	void SetRecoilAndReloadWeights();
 
+	FVector2D BulletTarget2d;
+
 protected:
 
 	// Will handle the turning in place variables
 	void TurnInPlace();
 	
 	UFUNCTION(BlueprintCallable)
-	void AdjustAimOffset(float &OutYaw, float &OutPitch, float InYaw = 0.f, float InPitch =0.f);
+	void AdjustAimOffset(float DeltaTime, float &OutYaw, float &OutPitch, float InYaw = 0.f, float InPitch =0.f);
 
 	//Handles Calculations for leaning while running
 	void Lean(float DeltaTime);
@@ -80,6 +82,7 @@ private:
 	// Yaw of the Character This frame - used for turn in place anims
 	float CharacterYaw;
 
+	
 	//Yaw of the character in the previous frame - used for turn in place anims
 	float CharacterYawLastFrame;
 
@@ -100,10 +103,10 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	float Pitch;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	float UpdatedPitch;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	float UpdatedYaw;
 
 	// Used to re-center our character when reloading to prevent an animation offset for the gun's clip

@@ -66,6 +66,7 @@ public:
 	void InitializeWeaponSockets();
 
 
+	bool GetBeamEndLocation(const FVector &MuzzleSocketLocation, FVector &OutBeamLocation);
 protected:
 	
 // Called when the game starts or when spawned
@@ -293,7 +294,7 @@ protected:
 	// Called When Fire Button is pressed
 	void FireWeapon();
 
-	bool GetBeamEndLocation(const FVector &MuzzleSocketLocation, FVector &OutBeamLocation);
+	
 
 	void AimingButtonPressed();
 	void AimingButtonReleased();
