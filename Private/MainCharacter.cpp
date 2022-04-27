@@ -521,10 +521,6 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 	if (bCrosshairHit)
 	{
 		OutBeamLocation = CrosshairHitResult.Location;
-
-
-		
-
 		
 	}
 	else
