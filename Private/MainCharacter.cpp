@@ -379,13 +379,13 @@ void AMainCharacter::FireOneBullet()
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
 			}
 
-			FVector BeamEnd;
+			FVector BeamEnd = EquippedWeapon->GetItemMesh()->GetChildComponent(5)->GetComponentLocation();
 			const bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
 			if (bBeamEnd)
 			{
-				if (ImpactParticles && bNothingHit == false)
+				if (ImpactParticles)
 				{
-					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd );
 				}
 				if (BeamParticles)
 				{
@@ -521,11 +521,16 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 	if (bCrosshairHit)
 	{
 		OutBeamLocation = CrosshairHitResult.Location;
+
+
+		
+
+		
 	}
 	else
 	{
 	}
-	FHitResult WeaponTraceHit;
+	// FHitResult WeaponTraceHit;
 
 
 	const FVector WeaponTraceStart = MuzzleSocketLocation;
@@ -1243,14 +1248,14 @@ void AMainCharacter::ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemInd
 			}
 			
 		}
-		EquipWeapon(NewWeapon);
+	
 		
 		
 		OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
 		NewWeapon->SetItemState(EItemState::EIS_Equipped);
 
 		CombatState = ECombatState::ECS_PickingUpWeapon;
-
+	EquipWeapon(NewWeapon);
 		
 	}
 }
@@ -1351,10 +1356,12 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 		OutHitBeamEnd = End;
 
 		GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility);
+		
 		if (OutHit.bBlockingHit)
 		{
-			OutHitBeamEnd = OutHit.Location;
-			return true;
+				OutHitBeamEnd = OutHit.Location;
+				return true;
+		
 		}
 	}
 

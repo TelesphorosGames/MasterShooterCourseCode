@@ -12,7 +12,6 @@
 #include "Kismet/KismetMathLibrary.h"
 
 
-
 UShooterAnimInstance::UShooterAnimInstance() :
 	Speed(0.f),
 	bIsInAir(false),
@@ -103,9 +102,9 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		}
 		else if (ShooterCharacter->GetAiming())
 		{
-			if(Speed>0)
+			if (Speed > 0)
 			{
-				OffsetState=EOffsetState::EOS_RunningAiming;
+				OffsetState = EOffsetState::EOS_RunningAiming;
 			}
 			else
 			{
@@ -118,10 +117,11 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		}
 	}
 
-	if(ShooterCharacter && ShooterCharacter->GetEquippedWeapon())
+	if (ShooterCharacter && ShooterCharacter->GetEquippedWeapon())
 	{
 		EquippedWeaponType = ShooterCharacter->GetEquippedWeapon()->GetWeaponType();
 	}
+	AdjustAimOffset(DeltaTime, LastMovementOffsetYaw, Pitch, UpdatedYaw, UpdatedPitch);
 	TurnInPlace();
 	Lean(DeltaTime);
 	SetRecoilAndReloadWeights();
@@ -133,8 +133,7 @@ void UShooterAnimInstance::NativeInitializeAnimation()
 	// Super::NativeInitializeAnimation();
 	ShooterCharacter = Cast<AMainCharacter>(TryGetPawnOwner());
 	UpdatedPitch = Pitch;
-	UpdatedYaw=MovementOffsetYaw;
-	
+	UpdatedYaw = RootYawOffset;
 }
 
 void UShooterAnimInstance::SetRecoilAndReloadWeights()
@@ -144,62 +143,60 @@ void UShooterAnimInstance::SetRecoilAndReloadWeights()
 		if (bReloading || bEquipping) // Turning in place, while reloading or equipping
 		{
 			RecoilWeight = 1.f; // Full reload animation, Full Recoil Animation
-			if(bCrouchingForAnims)
+			if (bCrouchingForAnims)
 			{
 				ReloadWeight = 0.f; // NO AIM ANIM, ALL RELOAD ANIM
 			}
-			
 		}
 		else
 		{
 			RecoilWeight = 0.f; // No reload animation, no recoil animation
 		}
 	}
-	else  /* NOT turning in place */
+	else /* NOT turning in place */
 	{
-		if(bCrouchingForAnims) // Crouching not turning
+		if (bCrouchingForAnims) // Crouching not turning
 		{
 			if (bReloading || bEquipping) // Crouching, while reloading or equipping
 			{
-				RecoilWeight = 1.f;  // Full Reload animation
+				RecoilWeight = 1.f; // Full Reload animation
 				ReloadWeight = 0.f;
 			}
-			else if(bAiming)
+			else if (bAiming)
 			{
-				RecoilWeight=.5f; // Half recoil
-				ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
+				RecoilWeight = .5f; // Half recoil
+				ReloadWeight = .8f; // Mostly aim anim with Recoil mixed in
 			}
 			else // Crouching hip fire stance
 			{
-				ReloadWeight =.8f;
+				ReloadWeight = .8f;
 				RecoilWeight = 0.2f; // Very Little Recoil
 			}
 		}
 		else // standing upright
 		{
-			if(bAiming) // Standing still, upright, Aiming 
+			if (bAiming) // Standing still, upright, Aiming 
 			{
-				if(bReloading) // and reloading
+				if (bReloading) // and reloading
 				{
-					RecoilWeight=.95f; // full reload animation
-					ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
+					RecoilWeight = .95f; // full reload animation
+					ReloadWeight = 0.f; // NO AIM ANIM, ALL RELOAD ANIM
 				}
 				else // just aiming
 				{
-					RecoilWeight=.5f; // Half recoil
-					ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
+					RecoilWeight = .5f; // Half recoil
+					ReloadWeight = .8f; // Mostly aim anim with Recoil mixed in
 				}
-					
 			}
 			else if (bReloading || bEquipping) // standing upright, not aiming, and reloading or Equipping
 			{
-				RecoilWeight=.9f; // Full Recoil Animation
-				ReloadWeight=0.f; // NO AIM ANIM, ALL RELOAD ANIM
+				RecoilWeight = .9f; // Full Recoil Animation
+				ReloadWeight = 0.f; // NO AIM ANIM, ALL RELOAD ANIM
 			}
 			else // Basic hipfire stance
 			{
-				RecoilWeight=.5f; // Half recoil
-				ReloadWeight=.8f; // Mostly aim anim with Recoil mixed in
+				RecoilWeight = .5f; // Half recoil
+				ReloadWeight = .8f; // Mostly aim anim with Recoil mixed in
 			}
 		}
 	}
@@ -210,7 +207,6 @@ void UShooterAnimInstance::TurnInPlace()
 	if (ShooterCharacter == nullptr) return;
 
 	Pitch = ShooterCharacter->GetBaseAimRotation().Pitch;
-
 
 	if (Speed > 0.001f || (bIsInAir))
 	{
@@ -251,8 +247,9 @@ void UShooterAnimInstance::TurnInPlace()
 			const float ABSRootYawOffset{FMath::Abs(RootYawOffset)};
 			if (ABSRootYawOffset > 90.f)
 			{
-				const float YawExcess{ABSRootYawOffset - 90.f};
+				YawExcess = {ABSRootYawOffset - 90.f};
 				RootYawOffset > 0 ? RootYawOffset -= YawExcess : RootYawOffset += YawExcess;
+				// RootYawOffset > 0 ? RootYawOffset -= YawExcess : RootYawOffset += YawExcess;
 			}
 		}
 		else /* NOT turning in place */
@@ -260,8 +257,6 @@ void UShooterAnimInstance::TurnInPlace()
 			bTurningInPlace = false;
 		}
 
-	
-		
 
 		if (GEngine)
 		{
@@ -275,63 +270,69 @@ void UShooterAnimInstance::TurnInPlace()
 
 void UShooterAnimInstance::AdjustAimOffset(float DeltaTime, float& OutYaw, float& OutPitch, float InYaw, float InPitch)
 {
-	
-	if(!ShooterCharacter || bReloading) return;
-	
-	if(ShooterCharacter->GetEquippedWeapon())
+	if (!ShooterCharacter || bReloading) return;
+
+	if (ShooterCharacter->GetEquippedWeapon())
 	{
 		FVector2D ViewportSize;
-		FVector BulletTarget = ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetChildComponent(5)->GetComponentLocation();
+		FVector BulletTarget = ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetChildComponent(5)->
+		                                         GetComponentLocation();
 		// FVector BulletTarget;
-		
+
 		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), BulletTarget, BulletTarget2d);
 
 
-		
-		if(GEngine && GEngine->GameViewport)
+		if (GEngine && GEngine->GameViewport)
 		{
 			GEngine->GameViewport->GetViewportSize(ViewportSize);
-		
-			
+
 			float YScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.Y, 0, ViewportSize.Y);
 			float XScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.X, 0, ViewportSize.X);
-			float PitchHolder = UpdatedPitch;
+
 			
-		if(UpdatedPitch> Pitch+UpdatedPitch || UpdatedPitch < Pitch-UpdatedPitch) UpdatedPitch = Pitch;
-			if(!(YScreenSpacePercent > .47f && YScreenSpacePercent < .53f))
+			float CurrentPitchTarget = UKismetMathLibrary::Lerp(InYaw, UpdatedYaw, 1);
+			float CurrentYawTarget = UKismetMathLibrary::Lerp(InPitch, UpdatedPitch, 1);
+
+
+			//
+			//
+
+			if (!(YScreenSpacePercent > .49f && YScreenSpacePercent < .51f))
 			{
-				
-				if(YScreenSpacePercent < .45f )
-                		{
-                			UpdatedPitch -= 3.f;
-					UE_LOG(LogTemp,Warning, TEXT("Pitch : %f"), Pitch);
-					UE_LOG(LogTemp,Warning, TEXT("UpdatedPitch : %f"), UpdatedPitch);
-                		}
-				if(YScreenSpacePercent > .55f)
-                		{
-                			UpdatedPitch+= 3.f;
-                		}
-				PitchHolder=UpdatedPitch;
-			}
-			
-				if(UpdatedYaw>180|| UpdatedYaw < -180) UpdatedYaw =MovementOffsetYaw;
-			if(!(XScreenSpacePercent > .47f && XScreenSpacePercent < .53f))
-			{
-				if(XScreenSpacePercent < .45f)
+				if (YScreenSpacePercent < .49f)
 				{
-					UpdatedYaw-=3.f;
+					UpdatedPitch -= (.5f - YScreenSpacePercent) * 25;
+			
 				}
-				if(XScreenSpacePercent > .55f)
+				if (YScreenSpacePercent > .51f)
 				{
-					UpdatedYaw+=3.f;
+					UpdatedPitch += FMath::Abs(.5f - YScreenSpacePercent) * 25;
+					
 				}
 			}
-		
+					UE_LOG(LogTemp, Warning, TEXT("Pitch : %f"), Pitch);
+					UE_LOG(LogTemp, Warning, TEXT("UpdatedPitch : %f"), UpdatedPitch);
+
+			if (!(XScreenSpacePercent > .49f && XScreenSpacePercent < .51f))
+			{
+				if (XScreenSpacePercent < .49f)
+				{
+					UpdatedYaw -= (.5f - XScreenSpacePercent) * 25;
+				}
+				if (XScreenSpacePercent > .51f)
+				{
+					UpdatedYaw += FMath::Abs(.5f - XScreenSpacePercent) * 25;
+				}
+			}
+			UE_LOG(LogTemp, Warning, TEXT("Yaw : %f"), CharacterYaw);
+			UE_LOG(LogTemp, Warning, TEXT("UpdatedYaw : %f"), UpdatedYaw);
+
+			if (UpdatedPitch > 180 || UpdatedPitch < -180) UpdatedPitch = InPitch;
+			if (UpdatedYaw > 180 || UpdatedYaw < -180) UpdatedYaw = InYaw;
+			OutPitch = CurrentPitchTarget;
+			OutYaw = CurrentYawTarget;
 		}
 	}
-
-
-	
 }
 
 void UShooterAnimInstance::Lean(float DeltaTime)

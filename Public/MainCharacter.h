@@ -88,6 +88,8 @@ public:
 
 private:
 
+	FHitResult WeaponTraceHit;
+	
 	bool bNothingHit;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My Stuff | Camera", meta = (AllowPrivateAccess = "true"))

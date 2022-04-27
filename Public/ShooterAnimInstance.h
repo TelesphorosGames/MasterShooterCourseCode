@@ -50,6 +50,7 @@ protected:
 	//Handles Calculations for leaning while running
 	void Lean(float DeltaTime);
 
+	float YawExcess = 0.f;
 
 private:
 
