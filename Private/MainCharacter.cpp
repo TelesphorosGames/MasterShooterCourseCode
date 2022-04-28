@@ -104,6 +104,8 @@ AMainCharacter::AMainCharacter() :
 	InterpComp5->SetupAttachment(GetFollowCamera());
 	InterpComp6 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent6"));
 	InterpComp6->SetupAttachment(GetFollowCamera());
+
+
 }
 
 void AMainCharacter::Tick(float DeltaTime)
@@ -379,13 +381,12 @@ void AMainCharacter::FireOneBullet()
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
 			}
 
-			FVector BeamEnd = EquippedWeapon->GetItemMesh()->GetChildComponent(5)->GetComponentLocation();
+			FVector BeamEnd; 
 			const bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
-			if (bBeamEnd)
-			{
-				if (ImpactParticles)
+		
+				if (ImpactParticles && !bNothingHit)
 				{
-					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd );
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
 				}
 				if (BeamParticles)
 				{
@@ -393,7 +394,8 @@ void AMainCharacter::FireOneBullet()
 						GetWorld(), BeamParticles, SocketTransform);
 					Beam->SetVectorParameter(FName("Target"), BeamEnd);
 				}
-			}
+			
+			
 		}
 	}
 }
@@ -520,27 +522,49 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 
 	if (bCrosshairHit)
 	{
-		OutBeamLocation = CrosshairHitResult.Location;
-		
+		OutBeamLocation =CrosshairHitResult.Location;
+		 CrossHairPublicHit= CrosshairHitResult.Location;
 	}
-	else
-	{
-	}
-	// FHitResult WeaponTraceHit;
 
+	FHitResult WeaponTraceHit;
+// FVector Testit;
+
+	// UGameplayStatics::DeprojectScreenToWorld(GetWorld()->GetFirstPlayerController(), FVector2D(.5,.5), Testit, CrosshairToWorld);
+	//
 
 	const FVector WeaponTraceStart = MuzzleSocketLocation;
-	const FVector StartToEnd = OutBeamLocation - MuzzleSocketLocation;
-	const FVector WeaponTraceEnd = MuzzleSocketLocation + StartToEnd * 1.25f;
+	// const FVector StartToEnd = - MuzzleSocketLocation;
+	const FVector WeaponTraceEnd = EquippedWeapon->GetItemMesh()->GetChildComponent(6)->GetComponentLocation();
+		// 
+	
 
 	GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECC_Visibility);
 	if (WeaponTraceHit.bBlockingHit)
 	{
-		OutBeamLocation = WeaponTraceHit.Location;
+		OutBeamLocation =WeaponTraceHit.Location;
+			bNothingHit = false;
 		return true;
 	}
 
-	OutBeamLocation = (WeaponTraceEnd);
+	// FHitResult FireHitResult;
+	// const FVector Start = MuzzleSocketLocation;
+	// const FRotator Rotation = GetEquippedWeapon()->GetActorRotation();
+	// const FVector RoationAxis = Rotation.Vector();
+	// const FVector End = MuzzleSocketLocation -WeaponTraceEnd * 50000;
+	//
+	// FVector BeamEndPoint = End;
+	//
+	// GetWorld()->LineTraceSingleByChannel(FireHitResult, Start, End, ECollisionChannel::ECC_Visibility);
+	// if(FireHitResult.bBlockingHit)
+	// {
+	// 	BeamEndPoint = FireHitResult.Location;
+	// 	DrawDebugLine(GetWorld(), Start, End, FColor::Emerald, false, 3.f);
+	// 	DrawDebugPoint(GetWorld(), FireHitResult.Location, 10, FColor::Red, false, 3.5f);
+	// 	OutBeamLocation = BeamEndPoint;
+	// 	return true;
+	// }
+	
+	OutBeamLocation = BeamEndPublic;
 	bNothingHit = true;
 	return true;
 }
@@ -1334,21 +1358,22 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 	}
 
 	FVector2D CrosshairLocation = {(ViewportSize.X / 2.f), (ViewportSize.Y / 2.f)};
-
-
+	
 	FVector CrossHairWorldPosition;
 	FVector CrossHairWorldDirection;
 
 	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(UGameplayStatics::GetPlayerController(this, 0),
 	                                                               CrosshairLocation, CrossHairWorldPosition,
 	                                                               CrossHairWorldDirection);
-
 	if (bScreenToWorld)
 	{
 		//Trace from Crosshair World Location Outward - Ray cast to see if any item collisions occur
-
+ 
 		const FVector Start = {CrossHairWorldPosition};
-		const FVector End = {Start + CrossHairWorldDirection * 50'000};
+		FVector End = Start +  CrossHairWorldDirection * 50000;
+		// FVector End = {Start + CrossHairWorldDirection * 50000};
+
+		BeamEndPublic=End;
 		OutHitBeamEnd = End;
 
 		GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility);
@@ -1356,11 +1381,10 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 		if (OutHit.bBlockingHit)
 		{
 				OutHitBeamEnd = OutHit.Location;
+			
 				return true;
-		
 		}
 	}
-
 	return false;
 }
 

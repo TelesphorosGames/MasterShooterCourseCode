@@ -275,11 +275,13 @@ void UShooterAnimInstance::AdjustAimOffset(float DeltaTime, float& OutYaw, float
 	if (ShooterCharacter->GetEquippedWeapon())
 	{
 		FVector2D ViewportSize;
-		FVector BulletTarget = ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetChildComponent(5)->
-		                                         GetComponentLocation();
+		
+		FVector BulletTarget;
+		const bool bBeamHit = ShooterCharacter->GetBeamEndLocation(ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetSocketLocation(FName("BarrelSocket")), BulletTarget);
 		// FVector BulletTarget;
-
-		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), BulletTarget, BulletTarget2d);
+		//GetEquippedWeapon()->GetItemMesh()->GetChildComponent(5)->
+		//GetComponentLocation()
+		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(),BulletTarget, BulletTarget2d);
 
 
 		if (GEngine && GEngine->GameViewport)

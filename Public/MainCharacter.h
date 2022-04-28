@@ -84,11 +84,17 @@ public:
 
 	// Handles finding where our picked up items should interpolate to on our screen
 	
+	FVector BeamEndPublic;
 
+	FVector CrosshairToWorld;
 
+	FVector CrossHairPublicHit = {0,0,0};
+	
 private:
 
-	FHitResult WeaponTraceHit;
+	
+	
+	
 	
 	bool bNothingHit;
 
