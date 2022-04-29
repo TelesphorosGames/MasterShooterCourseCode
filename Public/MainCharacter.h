@@ -109,14 +109,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My Stuff | Camera", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
 
-	// Sound Cue component that randomizes the gunfire sound
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
-	class USoundCue* FireSound;
-
-	// Particles for muzzle flash effect
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
-	class UParticleSystem* MuzzleFlash;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
 	class UAnimMontage* HipFireMontage;
 
@@ -414,10 +406,7 @@ public:
 	bool bShouldFire;
 
 	FTimerHandle AutoFireTimer;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
-	float AutoFireRate = 0.1f;
-
+	
 	void FireButtonPressed();
 
 	void FireButtonReleased();

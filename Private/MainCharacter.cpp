@@ -362,9 +362,9 @@ void AMainCharacter::IncrementOverlappedItemCount(int8 Amount)
 
 void AMainCharacter::PlayGunFireSound()
 {
-	if (FireSound)
+	if (EquippedWeapon->GetFireSound())
 	{
-		UGameplayStatics::PlaySound2D(GetWorld(), FireSound);
+		UGameplayStatics::PlaySound2D(GetWorld(), EquippedWeapon->GetFireSound());
 	}
 }
 
@@ -376,13 +376,13 @@ void AMainCharacter::FireOneBullet()
 		if (BarrelSocket)
 		{
 			const FTransform SocketTransform = BarrelSocket->GetSocketTransform(EquippedWeapon->GetItemMesh());
-			if (MuzzleFlash)
+			if (EquippedWeapon->GetMuzzleFlash())
 			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransform);
 			}
 
 			FVector BeamEnd; 
-			const bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
+			GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
 		
 				if (ImpactParticles && !bNothingHit)
 				{
@@ -759,7 +759,7 @@ void AMainCharacter::TraceForItems()
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
 			auto TraceHitWeapon = Cast<AWeapon>(TraceHitItem);
-			if(TraceHitWeapon)
+			if(TraceHitWeapon && TraceHitWeapon != GetEquippedWeapon())
 			{
 				if(HighlightedSlot == -1)
 				{
@@ -777,7 +777,7 @@ void AMainCharacter::TraceForItems()
 
 			
 			if (TraceHitItem && TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
-			{
+				{
 				TraceHitItem = nullptr;
 			}
 			if (TraceHitItem && TraceHitItem->GetPickupWidget())
@@ -788,8 +788,9 @@ void AMainCharacter::TraceForItems()
 
 				int32 DistanceInt = UKismetMathLibrary::FCeil(DistanceToItem);
 				TraceHitItem->DistanceToCharacter = (DistanceInt / 100);
-				if (TraceHitItem->bIsOverlappingChar == true || bAiming)
+				if (TraceHitItem->bIsOverlappingChar == true || bAiming && TraceHitItem != GetEquippedWeapon())
 				{
+					
 					TraceHitItem->GetPickupWidget()->SetVisibility(true);
 					TraceHitItem->EnableCustomDepth();
 
@@ -1325,8 +1326,11 @@ void AMainCharacter::FireButtonReleased()
 
 void AMainCharacter::StartFireTimer()
 {
+
+	if(!EquippedWeapon)return;
 	CombatState = ECombatState::ECS_FireTimerInProgress;
-	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, AutoFireRate);
+	
+	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, EquippedWeapon->GetAutoFireRate());
 
 	bNothingHit = false;
 }

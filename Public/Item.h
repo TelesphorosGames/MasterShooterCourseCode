@@ -86,7 +86,7 @@ public:
 	FORCEINLINE class UBoxComponent* GetCollisionBox() const { return CollisionBox ;}
 	FORCEINLINE EItemState GetItemState() const { return ItemState ;}
 	FORCEINLINE USkeletalMeshComponent* GetItemMesh() const {return ItemMesh ;}
-	FORCEINLINE USoundCue* GetPickupSound() const { return PickupSound ;}
+	FORCEINLINE class USoundCue* GetPickupSound() const { return PickupSound ;}
 	FORCEINLINE USoundCue* GetEquipSound() const {return EquipSound ;}
 	FORCEINLINE int32 GetItemCount() const { return ItemCount ; }
 	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex ; }

@@ -143,5 +143,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Category= "My Stuff | Combat", meta = (AllowPrivateAccess = true))
 	EWeaponType EquippedWeaponType;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Category= "My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	bool bShouldUseFabrik; 
 	
 };

@@ -30,7 +30,9 @@ UShooterAnimInstance::UShooterAnimInstance() :
 	LeanCharacterRotationLastFrame(FRotator(0.f)),
 	RecoilWeight(1.f),
 	bTurningInPlace(false),
-	ReloadWeight(.85f)
+	ReloadWeight(.85f),
+bShouldUseFabrik(true),
+EquippedWeaponType(EWeaponType::EWT_MAX)
 
 {
 }
@@ -48,6 +50,9 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 
 		bReloading = ShooterCharacter->GetCombatState() == ECombatState::ECS_ReloadingState;
 		bEquipping = ShooterCharacter->GetCombatState() == ECombatState::ECS_PickingUpWeapon;
+
+		bShouldUseFabrik = ShooterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied || ShooterCharacter->GetCombatState() == ECombatState::ECS_FireTimerInProgress;
+		
 		//Get later Speed of Character from Velocity - speed from falling is not taken into account
 		FVector Velocity = ShooterCharacter->GetVelocity();
 		Velocity.Z = 0.f;
