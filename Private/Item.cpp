@@ -14,23 +14,22 @@
 
 
 // Sets default values
-AItem::AItem()  :
-ItemName(FString("Default")),
-ItemCount(0),
-ItemRarity(EItemRarity::EIR_Common),
-ItemState(EItemState::EIS_OnGround),
-ZCurveInterpTime(1.f),
-ItemType(EItemType::EIT_MAX),
-InterpLocIndex(0),
-MaterialIndex(0),
-PulseCurveTime(2.5f),
-GlowAmount(0.f),
-FresnelExponent(0.f),
-FresnelReflectFraction(0.f),
-SlotIndex(0),
-bCharacterInventoryFull(false)
+AItem::AItem() :
+	ItemName(FString("Default")),
+	ItemCount(0),
+	ItemRarity(EItemRarity::EIR_Common),
+	ItemState(EItemState::EIS_OnGround),
+	ZCurveInterpTime(1.f),
+	ItemType(EItemType::EIT_MAX),
+	InterpLocIndex(0),
+	MaterialIndex(0),
+	PulseCurveTime(2.5f),
+	GlowAmount(0.f),
+	FresnelExponent(0.f),
+	FresnelReflectFraction(0.f),
+	SlotIndex(0),
+	bCharacterInventoryFull(false)
 {
-	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -57,12 +56,12 @@ void AItem::BeginPlay()
 
 	// Hide Pickup Widget initially
 
-	if(PickupWidget)
+	if (PickupWidget)
 	{
 		PickupWidget->SetVisibility(false);
 	}
-	
-	
+
+
 	SetActiveStars();
 
 	AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AItem::OnSphereOverlap);
@@ -84,44 +83,43 @@ void AItem::Tick(float DeltaTime)
 	UpdatePulseEffect();
 }
 
-void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                               UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	
-	if(OtherActor)
+	if (OtherActor)
 	{
 		AMainCharacter* ShooterCharacter = Cast<AMainCharacter>(OtherActor);
 
 		if (ShooterCharacter)
 		{
-			
 			ShooterCharacter->IncrementOverlappedItemCount(-1);
 			ShooterCharacter->UnHighlightInventorySlot();
-			if(ShooterCharacter->GetItemBeingLookedAt()==this)
+			if (ShooterCharacter->GetItemBeingLookedAt() == this)
 			{
-					PickupWidget->SetVisibility(false);
+				PickupWidget->SetVisibility(false);
 			}
-			if(ShooterCharacter->GetOverlappedItemCount()<=0||ShooterCharacter->GetItemBeingLookedAt()!=nullptr)
+			if (ShooterCharacter->GetOverlappedItemCount() <= 0 || ShooterCharacter->GetItemBeingLookedAt() != nullptr)
 			{
-				if(ShooterCharacter->GetItemBeingLookedAt())
+				if (ShooterCharacter->GetItemBeingLookedAt())
 				{
-					if(ShooterCharacter->GetItemBeingLookedAt()->GetPickupWidget())
+					if (ShooterCharacter->GetItemBeingLookedAt()->GetPickupWidget())
 					{
 						ShooterCharacter->GetItemBeingLookedAt()->GetPickupWidget()->SetVisibility(false);
 					}
-					if(ShooterCharacter->GetItemBeingLookedAt()->bInterping==false)
+					if (ShooterCharacter->GetItemBeingLookedAt()->bInterping == false)
 					{
 						ShooterCharacter->GetItemBeingLookedAt()->DisableCustomDepth();
 					}
-					
 				}
-				
 			}
-			bIsOverlappingChar=false;
+			bIsOverlappingChar = false;
 		}
 	}
 }
 
-void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                            UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+                            const FHitResult& SweepResult)
 {
 	if (OtherActor)
 	{
@@ -137,7 +135,7 @@ void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 
 void AItem::SetActiveStars()
 {
-	for(int32 i = 0; i <= 5; i++)
+	for (int32 i = 0; i <= 5; i++)
 	{
 		ActiveStars.Add(false);
 	}
@@ -170,22 +168,22 @@ void AItem::SetActiveStars()
 		ActiveStars[5] = true;
 		break;
 
-		
+
 	default: ;
 	}
 }
 
 void AItem::SetItemProperties(EItemState State)
 {
-	switch(State)
+	switch (State)
 	{
 	case EItemState::EIS_OnGround:
-		if(ItemMesh)
+		if (ItemMesh)
 		{
 			GetItemMesh()->SetEnableGravity(false);
 			ItemMesh->SetSimulatePhysics(false);
-            ItemMesh->SetVisibility(true);
-            ItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+			ItemMesh->SetVisibility(true);
+			ItemMesh->SetCollisionResponseToAllChannels(ECR_Ignore);
 			ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 		AreaSphere->SetCollisionResponseToAllChannels(ECR_Overlap);
@@ -195,18 +193,18 @@ void AItem::SetItemProperties(EItemState State)
 		CollisionBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-		
+
 		break;
 
 	case EItemState::EIS_Equipped:
 
-		if(PickupWidget)
+		if (PickupWidget)
 		{
 			PickupWidget->SetVisibility(false);
 		}
-		
-		
-		if(ItemMesh)
+
+
+		if (ItemMesh)
 		{
 			GetItemMesh()->SetEnableGravity(false);
 			ItemMesh->SetSimulatePhysics(false);
@@ -216,7 +214,7 @@ void AItem::SetItemProperties(EItemState State)
 		}
 		AreaSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		
+
 		CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -225,18 +223,17 @@ void AItem::SetItemProperties(EItemState State)
 
 	case EItemState::EIS_Falling:
 
-		if(ItemMesh)
+		if (ItemMesh)
 		{
 			GetItemMesh()->SetEnableGravity(true);
 			GetItemMesh()->SetSimulatePhysics(true);
-            GetItemMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-            GetItemMesh()->SetCollisionResponseToAllChannels(ECR_Ignore);
-            GetItemMesh()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+			GetItemMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			GetItemMesh()->SetCollisionResponseToAllChannels(ECR_Ignore);
+			GetItemMesh()->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 			GetItemMesh()->SetVisibility(true);
-	
 		}
-		
-		
+
+
 		AreaSphere->SetCollisionResponseToAllChannels(ECR_Overlap);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
@@ -248,12 +245,12 @@ void AItem::SetItemProperties(EItemState State)
 
 	case EItemState::EIS_EquipInterping:
 
-		if(PickupWidget)
+		if (PickupWidget)
 		{
 			PickupWidget->SetVisibility(false);
 		}
-		
-		if(ItemMesh)
+
+		if (ItemMesh)
 		{
 			GetItemMesh()->SetEnableGravity(false);
 			ItemMesh->SetSimulatePhysics(false);
@@ -264,23 +261,22 @@ void AItem::SetItemProperties(EItemState State)
 
 		AreaSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		
+
 		CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-		
-		
+
 		break;
 
 	case EItemState::EIS_PickedUp:
-		
 
-	if(PickupWidget)
-	{
-		PickupWidget->SetVisibility(false);
-	}
-		
-		if(ItemMesh)
+
+		if (PickupWidget)
+		{
+			PickupWidget->SetVisibility(false);
+		}
+
+		if (ItemMesh)
 		{
 			GetItemMesh()->SetEnableGravity(false);
 			ItemMesh->SetSimulatePhysics(false);
@@ -293,30 +289,27 @@ void AItem::SetItemProperties(EItemState State)
 
 		AreaSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		
+
 		CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-		
+
 		break;
-		
-		
+
+
 	default: ;
 	}
-
-	
 }
 
 void AItem::FinishInterping()
 {
-	bInterping=false;
-	if(CharacterPointer)
+	bInterping = false;
+	if (CharacterPointer)
 	{
 		// Resetting the struct for the InterpLocation
 		CharacterPointer->IncrementInterpLocItemCount(InterpLocIndex, -1);
 		CharacterPointer->GetPickupItem(this);
 		CharacterPointer->UnHighlightInventorySlot();
-		
 	}
 	SetActorScale3D(FVector(1.f));
 	DisableGlowMaterial();
@@ -325,50 +318,46 @@ void AItem::FinishInterping()
 
 FVector AItem::GetInterpLocation()
 {
-	if(CharacterPointer==nullptr) return FVector(0);
+	if (CharacterPointer == nullptr) return FVector(0);
 
-	switch(ItemType)
+	switch (ItemType)
 	{
 	case EItemType::EIT_Ammo:
-	return CharacterPointer->GetInterpLocation(InterpLocIndex).SceneComponent->GetComponentLocation();
-	
+		return CharacterPointer->GetInterpLocation(InterpLocIndex).SceneComponent->GetComponentLocation();
+
 	case EItemType::EIT_Weapon:
-	return CharacterPointer->GetInterpLocation(0).SceneComponent->GetComponentLocation();
-	
-		default: ;
+		return CharacterPointer->GetInterpLocation(0).SceneComponent->GetComponentLocation();
+
+	default: ;
 	}
 
 
-	
 	return {};
 }
 
 
-
 void AItem::SetItemState(EItemState State)
 {
-	
 	ItemState = State;
 	SetItemProperties(State);
-	
 }
 
 void AItem::StartItemCurve(AMainCharacter* Character)
 {
-	if(ItemState!=EItemState::EIS_OnGround) return;
+	if (ItemState != EItemState::EIS_OnGround) return;
 	GetWorldTimerManager().ClearTimer(PulseTimer);
-	
+
 	SetItemState(EItemState::EIS_EquipInterping);
 	GetWorldTimerManager().SetTimer(ItemPickupInterpTimer, this, &AItem::FinishInterping, ZCurveInterpTime);
 	CharacterPointer = Character;
-	
-	
+
+
 	// Get array index in InterLocations with lowest item count
 	InterpLocIndex = Character->GetInterpLocationIndex();
 	// Adds 1 to the item count for this InterpLocation struct - meaning this spot is full, no other item can go here
 	Character->IncrementInterpLocItemCount(InterpLocIndex, 1);
-	
-	if(PickupSound)
+
+	if (PickupSound)
 	{
 		UGameplayStatics::PlaySound2D(this, PickupSound);
 	}
@@ -377,19 +366,16 @@ void AItem::StartItemCurve(AMainCharacter* Character)
 	bInterping = true;
 	EnableCustomDepth();
 
-	
+
 	//* Getting the initial values for the Yaw directions of the item we're picking up
 	//* and player camera so that we can match the two and the item always faces the item
 
-	
+
 	// const double CameraRotationYaw = {Character->GetFollowCamera()->GetComponentRotation().Yaw};
 	// const double ItemRotationYaw = {GetActorRotation().Yaw};
 
 	// Inital yaw direction offset between camera and item, used to interp in ItemInterp
 	// InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
-	
-
-	
 }
 
 void AItem::ResetPulseTimer()
@@ -399,7 +385,7 @@ void AItem::ResetPulseTimer()
 
 void AItem::StartPulseTimer()
 {
-	if(ItemState==EItemState::EIS_OnGround)
+	if (ItemState == EItemState::EIS_OnGround)
 	{
 		GetWorldTimerManager().SetTimer(PulseTimer, this, &AItem::ResetPulseTimer, PulseCurveTime);
 	}
@@ -409,8 +395,8 @@ void AItem::StartPulseTimer()
 void AItem::ItemInterp(float DeltaTime)
 {
 	if (!bInterping) return;
-	
-	if(CharacterPointer && ItemZCurve)
+
+	if (CharacterPointer && ItemZCurve)
 	{
 		// Elapsed time since we started Timer for interping item into inventory
 		const float ElapsedTime = GetWorldTimerManager().GetTimerElapsed(ItemPickupInterpTimer);
@@ -422,9 +408,9 @@ void AItem::ItemInterp(float DeltaTime)
 		const FVector CameraInterpLocation = GetInterpLocation();
 
 		// Vector from item to target location, pointing straight up ( only interping the Z with this curve)
-		
-		const FVector ItemToCamera = FVector{0, 0, (CameraInterpLocation-CurrentItemLocation).Z};
-		
+
+		const FVector ItemToCamera = FVector{0, 0, (CameraInterpLocation - CurrentItemLocation).Z};
+
 		// Scale factor to multiply with curve value
 		const float DeltaZ = ItemToCamera.Size();
 
@@ -436,10 +422,10 @@ void AItem::ItemInterp(float DeltaTime)
 
 		CurrentItemLocation.X = InterpXValue;
 		CurrentItemLocation.Y = InterpYValue;
-		
+
 		// Adding curve value to Z component of item's location ( scaled by Delta Z )
 		CurrentItemLocation.Z += CurveValue * DeltaZ;
-		
+
 		// Updates the item's location - does the interpolation
 		SetActorLocation(CurrentItemLocation, true, nullptr, ETeleportType::TeleportPhysics);
 
@@ -447,20 +433,17 @@ void AItem::ItemInterp(float DeltaTime)
 		const FRotator CameraCurrentRotation = {CharacterPointer->GetFollowCamera()->GetComponentRotation()};
 
 		// Camera rotation to match the item's interp to 
-		FRotator ItemRotation = { CameraCurrentRotation.Pitch, CameraCurrentRotation.Yaw, 0 };
-		
+		FRotator ItemRotation = {CameraCurrentRotation.Pitch, CameraCurrentRotation.Yaw, 0};
+
 		//+ InterpInitialYawOffset
 		SetActorRotation(ItemRotation, ETeleportType::TeleportPhysics);
 
 
-		if(ItemScaleCurve)
+		if (ItemScaleCurve)
 		{
 			const float ScaleCurveValue = ItemScaleCurve->GetFloatValue(ElapsedTime);
 			SetActorScale3D(FVector(ScaleCurveValue, ScaleCurveValue, ScaleCurveValue));
 		}
-		
-
-
 	}
 }
 
@@ -472,7 +455,6 @@ void AItem::EnableCustomDepth()
 void AItem::DisableCustomDepth()
 {
 	ItemMesh->SetRenderCustomDepth(false);
-	
 }
 
 void AItem::InitializeCustomDepth()
@@ -482,122 +464,109 @@ void AItem::InitializeCustomDepth()
 
 void AItem::OnConstruction(const FTransform& Transform)
 {
-	
-
-
 	/* Load Data from ItemRarity data table
 	*/
 	//Path to the actual data table : Apparently important to not change after set here. ?? I am guessing
 	FString RarityTablePath(TEXT("DataTable'/Game/MyStuff/DataTables/ItemRarityTable.ItemRarityTable'"));
-	UDataTable* RarityTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *RarityTablePath));
-	if(RarityTableObject)
+	UDataTable* RarityTableObject = Cast<UDataTable>(
+		StaticLoadObject(UDataTable::StaticClass(), nullptr, *RarityTablePath));
+	if (RarityTableObject)
 	{
 		FItemRarityTable* RarityRow = nullptr;
-		switch(ItemRarity)
+		switch (ItemRarity)
 		{
 		case EItemRarity::EIR_Common:
-		RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Common"), TEXT(""));
-			
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Common"), TEXT(""));
+
 			break;
 		case EItemRarity::EIR_Great:
-			RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Great"), TEXT(""));
-			
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Great"), TEXT(""));
+
 			break;
 		case EItemRarity::EIR_Rare:
-			RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Rare"), TEXT(""));
-			
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Rare"), TEXT(""));
+
 			break;
 		case EItemRarity::EIR_Superb:
-			RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Superb"), TEXT(""));
-			
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Superb"), TEXT(""));
+
 			break;
 		case EItemRarity::EIR_Epic:
-			RarityRow=RarityTableObject->FindRow<FItemRarityTable>(FName("Epic"), TEXT(""));
-			
+			RarityRow = RarityTableObject->FindRow<FItemRarityTable>(FName("Epic"), TEXT(""));
+
 			break;
 
-			
+
 		default:
 			;
 		}
-		if(RarityRow)
+		if (RarityRow)
 		{
-			RowGlowColor=RarityRow->GlowColor;
-			RowLightColor=RarityRow->LightColor;
-			RowDarkColor=RarityRow->DarkColor;
-			RowNumberOfStars=RarityRow->NumberOfStars;
-			IconBackground=RarityRow->IconBackground;
-			if(GetItemMesh())
+			RowGlowColor = RarityRow->GlowColor;
+			RowLightColor = RarityRow->LightColor;
+			RowDarkColor = RarityRow->DarkColor;
+			RowNumberOfStars = RarityRow->NumberOfStars;
+			IconBackground = RarityRow->IconBackground;
+			if (GetItemMesh())
 			{
 				GetItemMesh()->SetCustomDepthStencilValue(RarityRow->CustomDepthStencil);
 			}
 		}
 	}
-	if(MaterialInstance)
-     	{
-     		DynamicMaterialInstance= UMaterialInstanceDynamic::Create(MaterialInstance, this);
-			DynamicMaterialInstance->SetVectorParameterValue(TEXT("Fresnel Color"), RowGlowColor);
-     		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
-     		EnableGlowMaterial();
-     	}
+	if (MaterialInstance)
+	{
+		DynamicMaterialInstance = UMaterialInstanceDynamic::Create(MaterialInstance, this);
+		DynamicMaterialInstance->SetVectorParameterValue(TEXT("Fresnel Color"), RowGlowColor);
+		ItemMesh->SetMaterial(MaterialIndex, DynamicMaterialInstance);
+		EnableGlowMaterial();
+	}
 }
 
 void AItem::UpdatePulseEffect()
 {
-	
 	float ElapsedTime;
 	FVector CurveVaule;
 
-	switch(ItemState)
+	switch (ItemState)
 	{
-		case(EItemState::EIS_OnGround):
-				
-			if(PulseCurve && DynamicMaterialInstance)
-			{
-				ElapsedTime = GetWorldTimerManager().GetTimerElapsed(PulseTimer);
-				
-				CurveVaule = PulseCurve->GetVectorValue(ElapsedTime);
-			}
-			
-			break;
+	case(EItemState::EIS_OnGround):
 
-		case(EItemState::EIS_EquipInterping):
+		if (PulseCurve && DynamicMaterialInstance)
+		{
+			ElapsedTime = GetWorldTimerManager().GetTimerElapsed(PulseTimer);
 
-			if(MaterialInterpPulseCurve && DynamicMaterialInstance)
-			{
-				ElapsedTime = GetWorldTimerManager().GetTimerElapsed(ItemPickupInterpTimer);
-				CurveVaule = MaterialInterpPulseCurve->GetVectorValue(ElapsedTime);
-			}
+			CurveVaule = PulseCurve->GetVectorValue(ElapsedTime);
+		}
 
-			break;
+		break;
 
-		default: ;
-		
+	case(EItemState::EIS_EquipInterping):
+
+		if (MaterialInterpPulseCurve && DynamicMaterialInstance)
+		{
+			ElapsedTime = GetWorldTimerManager().GetTimerElapsed(ItemPickupInterpTimer);
+			CurveVaule = MaterialInterpPulseCurve->GetVectorValue(ElapsedTime);
+		}
+
+		break;
+
+	default: ;
 	}
-	if(DynamicMaterialInstance)
+	if (DynamicMaterialInstance)
 	{
 		GlowAmount = 10.f;
 		FresnelExponent = 8.f;
 		FresnelReflectFraction = .005f;
-		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Glow Amount"), CurveVaule.X * GlowAmount );
-		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Fresnel Exponent"), CurveVaule.Y * FresnelExponent );
-		DynamicMaterialInstance->SetScalarParameterValue(TEXT("ReflectFractionIn"), CurveVaule.Z * FresnelReflectFraction );
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Glow Amount"), CurveVaule.X * GlowAmount);
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("Fresnel Exponent"), CurveVaule.Y * FresnelExponent);
+		DynamicMaterialInstance->SetScalarParameterValue(
+			TEXT("ReflectFractionIn"), CurveVaule.Z * FresnelReflectFraction);
 	}
-	
-	
-
-			
-
-
-
-
-
-
 }
 
 void AItem::EnableGlowMaterial()
 {
-	if(DynamicMaterialInstance)
+	if (DynamicMaterialInstance)
 	{
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowBlendAlpha"), 0.f);
 	}
@@ -605,7 +574,7 @@ void AItem::EnableGlowMaterial()
 
 void AItem::DisableGlowMaterial()
 {
-	if(DynamicMaterialInstance)
+	if (DynamicMaterialInstance)
 	{
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowBlendAlpha"), 1.f);
 	}

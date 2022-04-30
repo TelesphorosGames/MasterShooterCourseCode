@@ -63,10 +63,11 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;
-	void InitializeWeaponSockets();
-
-
+	
 	bool GetBeamEndLocation(const FVector &MuzzleSocketLocation, FVector &OutBeamLocation);
+
+
+	
 protected:
 	
 // Called when the game starts or when spawned
@@ -75,14 +76,13 @@ protected:
 public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-	FORCEINLINE bool GetAiming() const { return bAiming ; }
+	FORCEINLINE bool GetAiming() const { return bAiming; }
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount; }
 	FORCEINLINE class AItem* GetItemBeingLookedAt() const { return TraceHitItemLastFrame; }
 	FORCEINLINE ECombatState GetCombatState() const { return CombatState; }
 	FORCEINLINE bool GetCrouching() const {return bCrouching; }
-	FORCEINLINE class AWeapon* GetEquippedWeapon() const { return EquippedWeapon ; } 
-
-	// Handles finding where our picked up items should interpolate to on our screen
+	FORCEINLINE class AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
+	FORCEINLINE FVector2D GetCrosshairLocation() const {return CrosshairLocation; }
 	
 	FVector BeamEndPublic;
 
@@ -91,10 +91,9 @@ public:
 	FVector CrossHairPublicHit = {0,0,0};
 	
 private:
-
 	
-	
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "My Stuff | Camera", meta = (AllowPrivateAccess = "true"))
+	FVector2D CrosshairLocation;
 	
 	bool bNothingHit;
 
@@ -178,14 +177,12 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
 	TSubclassOf<AWeapon> DefaultWeaponClass;
-
-
+	
 	/*The item being hit by our line trace in TraceForItems() at any given time
 	 * COULD BE NULL */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
 	AItem* TraceHitItem;
-
-
+	
 	/* Distance outward from the camera in the forward direction used for determining where items
 	* are shown to the player */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
@@ -197,7 +194,6 @@ private:
 	// This TMAP will keep track of ammo types and their associated integer amount
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
 	TMap<EAmmoType, int32> AmmoMap;
-
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "My Stuff | Combat", meta = (AllowPrivateAccess=true))
 	int32 StartingPistolAmmo;
@@ -285,7 +281,9 @@ private:
 protected:
 	
 	void PlayGunFireSound();
+	
 	void FireOneBullet();
+	
 	void PlayRecoilAnimation();
 
 	UFUNCTION(BlueprintCallable)
@@ -293,67 +291,66 @@ protected:
 	
 	// Called When Fire Button is pressed
 	void FireWeapon();
-
 	
-
 	void AimingButtonPressed();
+	
 	void AimingButtonReleased();
 
 	bool bAimingButtonPressed;
 	
-
 	void Aim();
+	
 	void StopAiming();
 
 	void SetZoomInterp(float DeltaTime);
 
 	void InitializeInterpLocations();
-
 	
-
 	void CalculateCrosshairSpread(float DeltaTime);
 
 	void StartCrossHairBulletFire();
 	
 	UFUNCTION()
 	void FinishCrosshairBulletFire();
+	
 	void TraceForItems();
 
 	AWeapon* SpawnDefaultWeapon();
 
 	void EquipWeapon(AWeapon* WeaponToEquip);
 
-
 	// Used to let a weapon in our hands drop to the ground
 	void DropWeapon();
 
 	void TestButtonPressed();
+	
 	void TestButtonReleased();
 
 	void GKeyPressed();
+	
 	void OneKeyPressed();
+	
 	void TwoKeyPressed();
+	
 	void ThreeKeyPressed();
+	
 	void FourKeyPressed();
+	
 	void FiveKeyPressed();
 	
 	void SwapWeapon(AWeapon* WeaponToSwap);
+	
 	void PickupAmmo(class AAmmo* Ammo);
 	
 	void InitializeAmmoMap();
-
 	
 	bool WeaponHasAmmo();
-
 	// Bound to Reload key, handles all functions attached to input
 	void ReloadButtonPressed();
-
 	// Handles reloading animation and refills magazine for gun
 	void ReloadWeapon();
-
 	// Returns true if our character has the equipped weapon's ammo type - used for reloading
 	bool CarryingAmmo();
-	
 	// Will be called when the anim notify is reached to signal the end of the reload animation
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
@@ -363,7 +360,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void FinishDisarming();
-	
 	// Handle Animations for moving the clip during reloading
 	UFUNCTION(BlueprintCallable)
 	void GrabClip();
@@ -380,24 +376,18 @@ protected:
 
 	int32 GetEmptyInventorySlot();
 
-	
-	
 public:	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
 	float BaseTurnRate;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
 	float BaseLookUpRate;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
 	float HipTurnRate;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
 	float HipLookUpRate;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
 	float AimingTurnRate ;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "My Stuff")
 	float AimingLookUpRate;
 
@@ -415,24 +405,25 @@ public:
 
 	UFUNCTION()
 	void AutoFireReset();
-
 	// Line Trace For Items Under Crosshairs
 	bool TraceUnderCrosshairs(FHitResult &OutHit, FVector &OutHitBeamEnd);
 
 	void IncrementOverlappedItemCount(int8 Amount);
-
-
+	
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
 
 	FVector GetCameraInterpLocation();
 	
 	void GetPickupItem(AItem* Item);
-
 	// Returns index in InterpLocations array with lowest item count
 	int32 GetInterpLocationIndex();
+	
 	FInterpLocation GetInterpLocation(int32 Index);
+	
 	void IncrementInterpLocItemCount(int32 Index, int32 Amount);
+	
 	void HighlightInventorySlot();
+	
 	void UnHighlightInventorySlot();
 };

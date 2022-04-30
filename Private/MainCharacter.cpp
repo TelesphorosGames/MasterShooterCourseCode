@@ -18,7 +18,6 @@
 #include "Components/WidgetComponent.h"
 
 
-
 // Sets default values
 AMainCharacter::AMainCharacter() :
 
@@ -104,8 +103,6 @@ AMainCharacter::AMainCharacter() :
 	InterpComp5->SetupAttachment(GetFollowCamera());
 	InterpComp6 = CreateDefaultSubobject<USceneComponent>(TEXT("ItemInterpolationComponent6"));
 	InterpComp6->SetupAttachment(GetFollowCamera());
-
-
 }
 
 void AMainCharacter::Tick(float DeltaTime)
@@ -159,14 +156,6 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAction("ReloadButton", IE_Pressed, this, &AMainCharacter::ReloadButtonPressed);
 }
 
-void AMainCharacter::InitializeWeaponSockets()
-{
-	const USkeletalMeshSocket* TestSocket = GetMesh()->GetSocketByName(FName("GunSocket1"));
-
-	
-}
-	
-	
 
 // Called when the game starts or when spawned
 void AMainCharacter::BeginPlay()
@@ -188,7 +177,6 @@ void AMainCharacter::BeginPlay()
 	InitializeAmmoMap();
 	GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
 	InitializeInterpLocations();
-	InitializeWeaponSockets();
 }
 
 float AMainCharacter::GetCrosshairSpreadMultiplier() const
@@ -381,21 +369,19 @@ void AMainCharacter::FireOneBullet()
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransform);
 			}
 
-			FVector BeamEnd; 
+			FVector BeamEnd;
 			GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
-		
-				if (ImpactParticles && !bNothingHit)
-				{
-					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
-				}
-				if (BeamParticles)
-				{
-					UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
-						GetWorld(), BeamParticles, SocketTransform);
-					Beam->SetVectorParameter(FName("Target"), BeamEnd);
-				}
-			
-			
+
+			if (ImpactParticles && !bNothingHit)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
+			}
+			if (BeamParticles)
+			{
+				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+					GetWorld(), BeamParticles, SocketTransform);
+				Beam->SetVectorParameter(FName("Target"), BeamEnd);
+			}
 		}
 	}
 }
@@ -414,45 +400,42 @@ void AMainCharacter::AttachWeaponToSocket(AWeapon* Weapon)
 {
 	FAttachmentTransformRules Fatr(FAttachmentTransformRules::SnapToTargetIncludingScale);
 
-	if(Weapon->GetSlotIndex()==0)
+	if (Weapon->GetSlotIndex() == 0)
 	{
 		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket3"));
-		
+
 		return;
 	}
-	if(Weapon->GetSlotIndex()==1)
+	if (Weapon->GetSlotIndex() == 1)
 	{
 		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket1"));
-		
+
 		return;
 	}
-	if(Weapon->GetSlotIndex()==2)
+	if (Weapon->GetSlotIndex() == 2)
 	{
 		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket2"));
-		
+
 		return;
 	}
-	if(Weapon->GetSlotIndex()==3)
+	if (Weapon->GetSlotIndex() == 3)
 	{
 		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket3"));
 
 		return;
-		
 	}
-	if(Weapon->GetSlotIndex()==4)
+	if (Weapon->GetSlotIndex() == 4)
 	{
 		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket4"));
-	
+
 		return;
 	}
-	if(Weapon->GetSlotIndex()==5)
+	if (Weapon->GetSlotIndex() == 5)
 	{
 		Weapon->AttachToComponent(GetMesh(), Fatr, FName("GunSocket5"));
-		
+
 		return;
 	}
-
-		
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -464,54 +447,20 @@ void AMainCharacter::FireWeapon()
 	if (WeaponHasAmmo())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Weapon Fired!"));
-
 		//Handles the sound for the gunfire
 		PlayGunFireSound();
-
 		// Handles Bullet and finds where it hits
 		FireOneBullet();
-
 		//Play Animation for Recoil
 		PlayRecoilAnimation();
-
 		// Handles Crosshair Animation
 		StartCrossHairBulletFire();
-
 		// Decrease Ammo in weapon by 1
 		EquippedWeapon->DecreaseAmmo();
-
 		// Handles the Timer attached to the gun's fire rate
 		StartFireTimer();
 	}
 }
-
-
-//**
-// FHitResult FireHitResult;
-// const FVector Start = SocketTransform.GetLocation();
-// const FQuat Rotation = SocketTransform.GetRotation();
-// const FVector RoationAxis = Rotation.GetAxisX();
-// const FVector End = Start + RoationAxis * 50'000;
-//
-// FVector BeamEndPoint = End;
-//
-// GetWorld()->LineTraceSingleByChannel(FireHitResult, Start, End, ECollisionChannel::ECC_Visibility);
-// if(FireHitResult.bBlockingHit)
-// {
-// 	BeamEndPoint = FireHitResult.Location;
-// 	DrawDebugLine(GetWorld(), Start, End, FColor::Emerald, false, 3.f);
-// 	DrawDebugPoint(GetWorld(), FireHitResult.Location, 10, FColor::Red, false, 3.5f);
-//
-// 	if(ImpactParticles)
-// 	{
-// 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, FireHitResult.Location);
-// 	}
-// }
-// if(BeamParticles)
-// {
-// 	UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransform);
-// 	Beam->SetVectorParameter(FName("Target"), BeamEndPoint);
-// }
 
 
 bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
@@ -522,48 +471,24 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 
 	if (bCrosshairHit)
 	{
-		OutBeamLocation =CrosshairHitResult.Location;
-		 CrossHairPublicHit= CrosshairHitResult.Location;
+		OutBeamLocation = CrosshairHitResult.Location;
+		CrossHairPublicHit = CrosshairHitResult.Location;
 	}
 
 	FHitResult WeaponTraceHit;
-// FVector Testit;
-
-	// UGameplayStatics::DeprojectScreenToWorld(GetWorld()->GetFirstPlayerController(), FVector2D(.5,.5), Testit, CrosshairToWorld);
-	//
 
 	const FVector WeaponTraceStart = MuzzleSocketLocation;
-	// const FVector StartToEnd = - MuzzleSocketLocation;
+
 	const FVector WeaponTraceEnd = EquippedWeapon->GetItemMesh()->GetChildComponent(6)->GetComponentLocation();
-		// 
-	
 
 	GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECC_Visibility);
 	if (WeaponTraceHit.bBlockingHit)
 	{
-		OutBeamLocation =WeaponTraceHit.Location;
-			bNothingHit = false;
+		OutBeamLocation = WeaponTraceHit.Location;
+		bNothingHit = false;
 		return true;
 	}
 
-	// FHitResult FireHitResult;
-	// const FVector Start = MuzzleSocketLocation;
-	// const FRotator Rotation = GetEquippedWeapon()->GetActorRotation();
-	// const FVector RoationAxis = Rotation.Vector();
-	// const FVector End = MuzzleSocketLocation -WeaponTraceEnd * 50000;
-	//
-	// FVector BeamEndPoint = End;
-	//
-	// GetWorld()->LineTraceSingleByChannel(FireHitResult, Start, End, ECollisionChannel::ECC_Visibility);
-	// if(FireHitResult.bBlockingHit)
-	// {
-	// 	BeamEndPoint = FireHitResult.Location;
-	// 	DrawDebugLine(GetWorld(), Start, End, FColor::Emerald, false, 3.f);
-	// 	DrawDebugPoint(GetWorld(), FireHitResult.Location, 10, FColor::Red, false, 3.5f);
-	// 	OutBeamLocation = BeamEndPoint;
-	// 	return true;
-	// }
-	
 	OutBeamLocation = BeamEndPublic;
 	bNothingHit = true;
 	return true;
@@ -596,8 +521,6 @@ void AMainCharacter::Aim()
 		BaseLookUpRate = AimingLookUpRate;
 		GetCharacterMovement()->MaxWalkSpeed = CrouchMovementSpeed;
 		bShouldTraceForItems = true;
-		
-		
 	}
 }
 
@@ -759,25 +682,24 @@ void AMainCharacter::TraceForItems()
 		{
 			TraceHitItem = Cast<AItem>(ItemTraceResult.GetActor());
 			auto TraceHitWeapon = Cast<AWeapon>(TraceHitItem);
-			if(TraceHitWeapon && TraceHitWeapon != GetEquippedWeapon())
+			if (TraceHitWeapon && TraceHitWeapon != EquippedWeapon)
 			{
-				if(HighlightedSlot == -1)
+				if (HighlightedSlot == -1)
 				{
 					HighlightInventorySlot();
 				}
 			}
 			else
 			{
-				if(HighlightedSlot != -1)
+				if (HighlightedSlot != -1)
 				{
 					UnHighlightInventorySlot();
 				}
 			}
 
 
-			
 			if (TraceHitItem && TraceHitItem->GetItemState() == EItemState::EIS_EquipInterping)
-				{
+			{
 				TraceHitItem = nullptr;
 			}
 			if (TraceHitItem && TraceHitItem->GetPickupWidget())
@@ -788,13 +710,12 @@ void AMainCharacter::TraceForItems()
 
 				int32 DistanceInt = UKismetMathLibrary::FCeil(DistanceToItem);
 				TraceHitItem->DistanceToCharacter = (DistanceInt / 100);
-				if (TraceHitItem->bIsOverlappingChar == true || bAiming && TraceHitItem != GetEquippedWeapon())
+				if (TraceHitItem->bIsOverlappingChar == true || bAiming && TraceHitItem != EquippedWeapon)
 				{
-					
 					TraceHitItem->GetPickupWidget()->SetVisibility(true);
 					TraceHitItem->EnableCustomDepth();
 
-					if(Inventory.Num() >= InventorySize)
+					if (Inventory.Num() >= InventorySize)
 					{
 						TraceHitItem->SetCharacterInventoryFull(true);
 					}
@@ -814,7 +735,7 @@ void AMainCharacter::TraceForItems()
 							}
 						}
 					}
-					
+
 					TraceHitItemLastFrame = TraceHitItem;
 				}
 			}
@@ -829,8 +750,8 @@ void AMainCharacter::TraceForItems()
 		}
 		else
 		{
-			TraceHitItem=nullptr;
-			if(TraceHitItemLastFrame && TraceHitItemLastFrame != TraceHitItem)
+			TraceHitItem = nullptr;
+			if (TraceHitItemLastFrame && TraceHitItemLastFrame != TraceHitItem)
 			{
 				TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
 				if (TraceHitItemLastFrame->bInterping == false)
@@ -838,7 +759,6 @@ void AMainCharacter::TraceForItems()
 					TraceHitItemLastFrame->DisableCustomDepth();
 				}
 			}
-		
 		}
 	}
 }
@@ -861,14 +781,14 @@ void AMainCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 		 */
 		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("SMG_Socket"));
 		const USkeletalMeshSocket* ARHandSocket = GetMesh()->GetSocketByName(FName("AR_Socket"));
-		switch(WeaponToEquip->GetWeaponType())
+		switch (WeaponToEquip->GetWeaponType())
 		{
 		case EWeaponType::EWT_SubmachineGun:
-            			if (HandSocket)
-            			{
-            				HandSocket->AttachActor(WeaponToEquip, GetMesh());
-            			}
-		break;
+			if (HandSocket)
+			{
+				HandSocket->AttachActor(WeaponToEquip, GetMesh());
+			}
+			break;
 
 		case EWeaponType::EWT_AssaultRifle:
 			if (ARHandSocket)
@@ -881,10 +801,7 @@ void AMainCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 		default:
 			;
 		}
-		
 
-		
-		
 
 		//Brodcasting the current slot index and the new slot index to the inventory bar widget
 		// -1 = no equipped weapon yet, no need to play ( reverse ) item animation
@@ -918,12 +835,11 @@ void AMainCharacter::DropWeapon()
 		EquippedWeapon->EnableGlowMaterial();
 
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if(AnimInstance && EquipMontage)
+		if (AnimInstance && EquipMontage)
 		{
 			AnimInstance->Montage_Play(EquipMontage);
 			AnimInstance->Montage_JumpToSection(FName("ThrowWeapon"));
 		}
-		
 	}
 }
 
@@ -1150,7 +1066,6 @@ void AMainCharacter::FinishReloading()
 void AMainCharacter::FinishEquipping()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
-	
 }
 
 void AMainCharacter::FinishDisarming()
@@ -1244,18 +1159,18 @@ void AMainCharacter::ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemInd
 	if (CurrentIndex == NewItemIndex || NewItemIndex >= Inventory.Num()) return;
 	if (CombatState == ECombatState::ECS_Unoccupied)
 	{
-		WeaponInExchange=EquippedWeapon;
+		WeaponInExchange = EquippedWeapon;
 		auto OldEquippedWeapon = EquippedWeapon;
 		auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && EquipMontage)
 		{
-			int32 Rand = FMath::RandRange(1,2);
-			switch(Rand)
+			int32 Rand = FMath::RandRange(1, 2);
+			switch (Rand)
 			{
 			case 1:
-			AnimInstance->Montage_Play(EquipMontage, 1.0f);
-			AnimInstance->Montage_JumpToSection(FName("Equip"));
+				AnimInstance->Montage_Play(EquipMontage, 1.0f);
+				AnimInstance->Montage_JumpToSection(FName("Equip"));
 				break;
 
 			case 2:
@@ -1267,35 +1182,32 @@ void AMainCharacter::ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemInd
 			default:
 				;
 			}
-			
 		}
-	
-		
-		
+
+
 		OldEquippedWeapon->SetItemState(EItemState::EIS_PickedUp);
 		NewWeapon->SetItemState(EItemState::EIS_Equipped);
 
 		CombatState = ECombatState::ECS_PickingUpWeapon;
-	EquipWeapon(NewWeapon);
-		
+		EquipWeapon(NewWeapon);
 	}
 }
 
 int32 AMainCharacter::GetEmptyInventorySlot()
 {
-	for(int32 i=0; i<Inventory.Num(); i++)
+	for (int32 i = 0; i < Inventory.Num(); i++)
 	{
-		if(Inventory[i]==nullptr)
+		if (Inventory[i] == nullptr)
 		{
 			return i;
 		}
 	}
-	if(Inventory.Num()<InventorySize)
+	if (Inventory.Num() < InventorySize)
 	{
 		return Inventory.Num();
 	}
 
-	
+
 	return -1;
 }
 
@@ -1326,11 +1238,11 @@ void AMainCharacter::FireButtonReleased()
 
 void AMainCharacter::StartFireTimer()
 {
-
-	if(!EquippedWeapon)return;
+	if (!EquippedWeapon)return;
 	CombatState = ECombatState::ECS_FireTimerInProgress;
-	
-	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset, EquippedWeapon->GetAutoFireRate());
+
+	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset,
+	                                EquippedWeapon->GetAutoFireRate());
 
 	bNothingHit = false;
 }
@@ -1354,15 +1266,14 @@ void AMainCharacter::AutoFireReset()
 
 bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBeamEnd)
 {
-	//Get Viewport Size:
 	FVector2D ViewportSize;
 	if (GEngine && GEngine->GameViewport)
 	{
 		GEngine->GameViewport->GetViewportSize(ViewportSize);
 	}
 
-	FVector2D CrosshairLocation = {(ViewportSize.X / 2.f), (ViewportSize.Y / 2.f)};
-	
+	CrosshairLocation = {(ViewportSize.X / 2.f), (ViewportSize.Y / 2.f)};
+
 	FVector CrossHairWorldPosition;
 	FVector CrossHairWorldDirection;
 
@@ -1371,22 +1282,19 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 	                                                               CrossHairWorldDirection);
 	if (bScreenToWorld)
 	{
-		//Trace from Crosshair World Location Outward - Ray cast to see if any item collisions occur
- 
+		//Trace from Crosshair World Location Outward - Ray cast to see if any item collisions occur 
 		const FVector Start = {CrossHairWorldPosition};
-		FVector End = Start +  CrossHairWorldDirection * 50000;
-		// FVector End = {Start + CrossHairWorldDirection * 50000};
-
-		BeamEndPublic=End;
+		FVector End = Start + CrossHairWorldDirection * 50000;
+		BeamEndPublic = End;
 		OutHitBeamEnd = End;
 
 		GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility);
-		
+
 		if (OutHit.bBlockingHit)
 		{
-				OutHitBeamEnd = OutHit.Location;
-			
-				return true;
+			OutHitBeamEnd = OutHit.Location;
+
+			return true;
 		}
 	}
 	return false;
@@ -1400,3 +1308,81 @@ FInterpLocation AMainCharacter::GetInterpLocation(int32 Index)
 	}
 	return FInterpLocation();
 }
+
+
+/* ************************** DISCARDED CODE *******************************************
+*
+
+//**** PERTAINING TO GETBEAMENDLOCATION() ****************
+// FHitResult FireHitResult;
+// const FVector Start = SocketTransform.GetLocation();
+// const FQuat Rotation = SocketTransform.GetRotation();
+// const FVector RoationAxis = Rotation.GetAxisX();
+// const FVector End = Start + RoationAxis * 50'000;
+//
+// FVector BeamEndPoint = End;
+//
+// GetWorld()->LineTraceSingleByChannel(FireHitResult, Start, End, ECollisionChannel::ECC_Visibility);
+// if(FireHitResult.bBlockingHit)
+// {
+// 	BeamEndPoint = FireHitResult.Location;
+// 	DrawDebugLine(GetWorld(), Start, End, FColor::Emerald, false, 3.f);
+// 	DrawDebugPoint(GetWorld(), FireHitResult.Location, 10, FColor::Red, false, 3.5f);
+//
+// 	if(ImpactParticles)
+// 	{
+// 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, FireHitResult.Location);
+// 	}
+// }
+// if(BeamParticles)
+// {
+// 	UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamParticles, SocketTransform);
+// 	Beam->SetVectorParameter(FName("Target"), BeamEndPoint);
+// }
+
+	// FHitResult FireHitResult;
+	// const FVector Start = MuzzleSocketLocation;
+	// const FRotator Rotation = GetEquippedWeapon()->GetActorRotation();
+	// const FVector RoationAxis = Rotation.Vector();
+	// const FVector End = MuzzleSocketLocation -WeaponTraceEnd * 50000;
+	//
+	// FVector BeamEndPoint = End;
+	//
+	// GetWorld()->LineTraceSingleByChannel(FireHitResult, Start, End, ECollisionChannel::ECC_Visibility);
+	// if(FireHitResult.bBlockingHit)
+	// {
+	// 	BeamEndPoint = FireHitResult.Location;
+	// 	DrawDebugLine(GetWorld(), Start, End, FColor::Emerald, false, 3.f);
+	// 	DrawDebugPoint(GetWorld(), FireHitResult.Location, 10, FColor::Red, false, 3.5f);
+	// 	OutBeamLocation = BeamEndPoint;
+	// 	return true;
+	// }
+
+		// const FVector Start = {CrossHairWorldPosition};
+		// FVector End = Start +  CrossHairWorldDirection * 50000;
+		// FVector End = {Start + CrossHairWorldDirection * 50000};
+ *
+ *
+*
+		// *** USE TO CREATE FSTRINGS WITH Printf AND GEngine->AddOnscreenDebugMessage
+		//
+		// FString MovementOffsetMessage = FString::Printf(TEXT("%f"), MovementOffsetYaw);
+		//
+		// if(GEngine)
+		// {
+		// 	
+		// 	// FString RotationMessage = FString::Printf(TEXT("Base Aim Roation : %f"), AimRotation.Yaw);
+		// 	// FString MovementRotationMessage = FString::Printf(TEXT("%f"), MovementRotation.Yaw);
+		// 	GEngine->AddOnScreenDebugMessage(1, 0, FColor::White, MovementOffsetMessage);
+		// }
+/*
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+*/

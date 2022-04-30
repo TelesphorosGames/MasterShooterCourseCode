@@ -4,14 +4,14 @@
 #include "Weapon.h"
 
 AWeapon::AWeapon():
-ThrowWeaponTime(0.7f),
-bFalling(false),
-AmmoCount(30),
-MagazineSize(30),
-WeaponType(EWeaponType::EWT_SubmachineGun),
-AmmoType(EAmmoType::EAT_Pistol),
-ReloadMontageSection(FName(TEXT("Reload_SMG"))),
-ClipBoneName(TEXT("smg_clip"))
+	ThrowWeaponTime(0.7f),
+	bFalling(false),
+	AmmoCount(30),
+	MagazineSize(30),
+	WeaponType(EWeaponType::EWT_SubmachineGun),
+	AmmoType(EAmmoType::EAT_Pistol),
+	ReloadMontageSection(FName(TEXT("Reload_SMG"))),
+	ClipBoneName(TEXT("smg_clip"))
 
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -23,12 +23,11 @@ void AWeapon::Tick(float DeltaTime)
 
 
 	// Keeps the weapon upright while it is falling
-	if(GetItemState() == EItemState::EIS_Falling && bFalling)
+	if (GetItemState() == EItemState::EIS_Falling && bFalling)
 	{
 		const FRotator MeshRotation = {0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f};
 		GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
-	
 }
 
 void AWeapon::ThrowWeapon()
@@ -37,10 +36,10 @@ void AWeapon::ThrowWeapon()
 	GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
 
 	// const FVector MeshForward = {GetItemMesh()->GetForwardVector() };
-	const FVector MeshRight = {GetItemMesh()->GetRightVector() };
+	const FVector MeshRight = {GetItemMesh()->GetRightVector()};
 
 
-	float RandomRotation = { FMath::RandRange(15.f, 40.f) };
+	float RandomRotation = {FMath::RandRange(15.f, 40.f)};
 
 	// The direction in which we throw the weapon ( initialized as a unit vector pointing straight up : )
 	FVector ImpulseDirection = MeshRight.RotateAngleAxis(RandomRotation, FVector{0.f, 0.f, 1.f});
@@ -54,7 +53,7 @@ void AWeapon::ThrowWeapon()
 
 void AWeapon::DecreaseAmmo()
 {
-	if (AmmoCount - 1 <= 0 )
+	if (AmmoCount - 1 <= 0)
 	{
 		AmmoCount = 0;
 	}
@@ -62,51 +61,50 @@ void AWeapon::DecreaseAmmo()
 	{
 		--AmmoCount;
 	}
-	
 }
 
 void AWeapon::ReloadAmmo(int32 AmmoAmount)
 {
 	checkf(AmmoCount+AmmoAmount <= MagazineSize, TEXT("Attempted To reload with more than magazine capacity "));
-	AmmoCount+=AmmoAmount;
+	AmmoCount += AmmoAmount;
 }
 
 void AWeapon::StopFalling()
 {
-	bFalling=false;
+	bFalling = false;
 	SetItemState(EItemState::EIS_OnGround);
 	StartPulseTimer();
 }
 
 void AWeapon::OnConstruction(const FTransform& Transform)
 {
-
 	Super::OnConstruction(Transform);
-	
-	const FString DataTablePath ={TEXT("DataTable'/Game/MyStuff/DataTables/WeaponDataTable.WeaponDataTable'")};
-	UDataTable* WeaponDataTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *DataTablePath));
 
-	if(WeaponDataTableObject)
+	const FString DataTablePath = {TEXT("DataTable'/Game/MyStuff/DataTables/WeaponDataTable.WeaponDataTable'")};
+	UDataTable* WeaponDataTableObject = Cast<UDataTable>(
+		StaticLoadObject(UDataTable::StaticClass(), nullptr, *DataTablePath));
+
+	if (WeaponDataTableObject)
 	{
 		FWeaponDataTable* WeaponDataRow = nullptr;
 
-		
-		switch(WeaponType)
-        		{
-        		case EWeaponType::EWT_SubmachineGun:
-					WeaponDataRow=WeaponDataTableObject->FindRow<FWeaponDataTable>(FName("SMG"), TEXT(""));
 
-        			
-        			break;
-        		case EWeaponType::EWT_AssaultRifle:
-        			WeaponDataRow=WeaponDataTableObject->FindRow<FWeaponDataTable>(FName("AR"), TEXT(""));
-			
-        			break;
-        		default:
-        			;
-        		}
+		switch (WeaponType)
+		{
+		case EWeaponType::EWT_SubmachineGun:
+			WeaponDataRow = WeaponDataTableObject->FindRow<FWeaponDataTable>(FName("SMG"), TEXT(""));
 
-		if(WeaponDataRow)
+
+			break;
+		case EWeaponType::EWT_AssaultRifle:
+			WeaponDataRow = WeaponDataTableObject->FindRow<FWeaponDataTable>(FName("AR"), TEXT(""));
+
+			break;
+		default:
+			;
+		}
+
+		if (WeaponDataRow)
 		{
 			AmmoType = WeaponDataRow->AmmoType;
 			AmmoCount = WeaponDataRow->WeaponAmmo;
@@ -119,13 +117,13 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			SetAmmoIcon(WeaponDataRow->AmmoIcon);
 			SetMaterialInstance(WeaponDataRow->MaterialInstance);
 
-			PreviousMaterialIndex=GetMaterialIndex();
+			PreviousMaterialIndex = GetMaterialIndex();
 			GetItemMesh()->SetMaterial(PreviousMaterialIndex, nullptr);
 			SetMaterialIndex(WeaponDataRow->MaterialIndex);
 			SetClipBoneName(WeaponDataRow->ClipBoneName);
 			SetReloadMontageSection(WeaponDataRow->ReloadMontageSection);
 			GetItemMesh()->SetAnimInstanceClass(WeaponDataRow->AnimBP);
-			CrosshairsBottom= WeaponDataRow->CrosshairsBottom;
+			CrosshairsBottom = WeaponDataRow->CrosshairsBottom;
 			CrosshairsLeft = WeaponDataRow->CrosshairsLeft;
 			CrosshairsRight = WeaponDataRow->CrosshairsRight;
 			CrosshairsTop = WeaponDataRow->CrosshairsTop;
@@ -133,12 +131,8 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			AutoFireRate = WeaponDataRow->AutoFireRate;
 			MuzzleFlash = WeaponDataRow->MuzzleFlash;
 			FireSound = WeaponDataRow->FireSound;
-
-
-			
-			
 		}
-		if(GetMaterialInstance())
+		if (GetMaterialInstance())
 		{
 			SetDynamicMaterialInstance(UMaterialInstanceDynamic::Create(GetMaterialInstance(), this));
 			GetDynamicMaterialInstance()->SetVectorParameterValue(TEXT("Fresnel Color"), GetGlowColor());
@@ -146,8 +140,6 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			EnableGlowMaterial();
 		}
 	}
-		
-
 }
 
 bool AWeapon::ClipIsFull()

@@ -31,8 +31,8 @@ UShooterAnimInstance::UShooterAnimInstance() :
 	RecoilWeight(1.f),
 	bTurningInPlace(false),
 	ReloadWeight(.85f),
-bShouldUseFabrik(true),
-EquippedWeaponType(EWeaponType::EWT_MAX)
+	bShouldUseFabrik(true),
+	EquippedWeaponType(EWeaponType::EWT_MAX)
 
 {
 }
@@ -51,18 +51,15 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		bReloading = ShooterCharacter->GetCombatState() == ECombatState::ECS_ReloadingState;
 		bEquipping = ShooterCharacter->GetCombatState() == ECombatState::ECS_PickingUpWeapon;
 
-		bShouldUseFabrik = ShooterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied || ShooterCharacter->GetCombatState() == ECombatState::ECS_FireTimerInProgress;
-		
-		//Get later Speed of Character from Velocity - speed from falling is not taken into account
+		bShouldUseFabrik = ShooterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied || ShooterCharacter->
+			GetCombatState() == ECombatState::ECS_FireTimerInProgress || ShooterCharacter->GetCombatState() == ECombatState::ECS_PickingUpWeapon;
+
+		//Get lateral Speed of Character from Velocity - speed from falling is not taken into account
 		FVector Velocity = ShooterCharacter->GetVelocity();
 		Velocity.Z = 0.f;
 		Speed = Velocity.Size();
 
-		// Char in air? 
-
 		bIsInAir = ShooterCharacter->GetCharacterMovement()->IsFalling();
-
-		// Is Char moving at all?
 
 		if (ShooterCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0)
 		{
@@ -84,18 +81,6 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		}
 
 		bAiming = ShooterCharacter->GetAiming();
-
-		// *** USE TO CREATE FSTRINGS WITH Printf AND GEngine->AddOnscreenDebugMessage ***//
-		//
-		// FString MovementOffsetMessage = FString::Printf(TEXT("%f"), MovementOffsetYaw);
-		//
-		// if(GEngine)
-		// {
-		// 	
-		// 	// FString RotationMessage = FString::Printf(TEXT("Base Aim Roation : %f"), AimRotation.Yaw);
-		// 	// FString MovementRotationMessage = FString::Printf(TEXT("%f"), MovementRotation.Yaw);
-		// 	GEngine->AddOnScreenDebugMessage(1, 0, FColor::White, MovementOffsetMessage);
-		// }
 
 		if (bReloading)
 		{
@@ -126,7 +111,7 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	{
 		EquippedWeaponType = ShooterCharacter->GetEquippedWeapon()->GetWeaponType();
 	}
-	AdjustAimOffset(DeltaTime, LastMovementOffsetYaw, Pitch, UpdatedYaw, UpdatedPitch);
+	AdjustAimOffset(LastMovementOffsetYaw, Pitch, UpdatedYaw, UpdatedPitch);
 	TurnInPlace();
 	Lean(DeltaTime);
 	SetRecoilAndReloadWeights();
@@ -225,13 +210,14 @@ void UShooterAnimInstance::TurnInPlace()
 	{
 		CharacterYawLastFrame = CharacterYaw;
 		CharacterYaw = ShooterCharacter->GetActorRotation().Yaw;
+		
 		// Difference between yaw last frame and this frame
 		const float YawTIPDelta = {(CharacterYaw - CharacterYawLastFrame)};
 
 		// Clamps Root Yaw Offset to -180, 180
 		RootYawOffset = UKismetMathLibrary::NormalizeAxis(RootYawOffset - YawTIPDelta);
+		
 		// Metadata attached to our curve for turn in place animations
-
 		const float Turning{GetCurveValue(TEXT("Turning"))};
 		if (Turning > 0) /* TURNING IN PLACE  */
 		{
@@ -248,7 +234,6 @@ void UShooterAnimInstance::TurnInPlace()
 			RootYawOffset > 0 ? RootYawOffset -= DeltaRotation : RootYawOffset += DeltaRotation;
 
 			// Getting the Absolute value of Root Yaw Offset and compensating by finding the excess amount ( after 90 degreees ) and subtracting it / adding it depending on direction
-
 			const float ABSRootYawOffset{FMath::Abs(RootYawOffset)};
 			if (ABSRootYawOffset > 90.f)
 			{
@@ -261,8 +246,7 @@ void UShooterAnimInstance::TurnInPlace()
 		{
 			bTurningInPlace = false;
 		}
-
-
+		
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(1, -1, FColor::Blue,
@@ -273,22 +257,21 @@ void UShooterAnimInstance::TurnInPlace()
 	}
 }
 
-void UShooterAnimInstance::AdjustAimOffset(float DeltaTime, float& OutYaw, float& OutPitch, float InYaw, float InPitch)
+void UShooterAnimInstance::AdjustAimOffset(float& OutYaw, float& OutPitch, const float InYaw,const float InPitch)
 {
-	if (!ShooterCharacter || bReloading) return;
+	if (!ShooterCharacter || bReloading || bEquipping) return;
 
 	if (ShooterCharacter->GetEquippedWeapon())
 	{
 		FVector2D ViewportSize;
-		
+
 		FVector BulletTarget;
-		const bool bBeamHit = ShooterCharacter->GetBeamEndLocation(ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetSocketLocation(FName("BarrelSocket")), BulletTarget);
-		// FVector BulletTarget;
-		//GetEquippedWeapon()->GetItemMesh()->GetChildComponent(5)->
-		//GetComponentLocation()
-		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(),BulletTarget, BulletTarget2d);
+		ShooterCharacter->GetBeamEndLocation(
+			ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetSocketLocation(FName("BarrelSocket")),
+			BulletTarget);
 
-
+		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), BulletTarget, BulletTarget2d);
+		
 		if (GEngine && GEngine->GameViewport)
 		{
 			GEngine->GameViewport->GetViewportSize(ViewportSize);
@@ -296,29 +279,20 @@ void UShooterAnimInstance::AdjustAimOffset(float DeltaTime, float& OutYaw, float
 			float YScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.Y, 0, ViewportSize.Y);
 			float XScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.X, 0, ViewportSize.X);
 
-			
 			float CurrentPitchTarget = UKismetMathLibrary::Lerp(InYaw, UpdatedYaw, 1);
 			float CurrentYawTarget = UKismetMathLibrary::Lerp(InPitch, UpdatedPitch, 1);
-
-
-			//
-			//
 
 			if (!(YScreenSpacePercent > .49f && YScreenSpacePercent < .51f))
 			{
 				if (YScreenSpacePercent < .49f)
 				{
 					UpdatedPitch -= (.5f - YScreenSpacePercent) * 25;
-			
 				}
 				if (YScreenSpacePercent > .51f)
 				{
 					UpdatedPitch += FMath::Abs(.5f - YScreenSpacePercent) * 25;
-					
 				}
 			}
-					UE_LOG(LogTemp, Warning, TEXT("Pitch : %f"), Pitch);
-					UE_LOG(LogTemp, Warning, TEXT("UpdatedPitch : %f"), UpdatedPitch);
 
 			if (!(XScreenSpacePercent > .49f && XScreenSpacePercent < .51f))
 			{
@@ -331,11 +305,12 @@ void UShooterAnimInstance::AdjustAimOffset(float DeltaTime, float& OutYaw, float
 					UpdatedYaw += FMath::Abs(.5f - XScreenSpacePercent) * 25;
 				}
 			}
-			UE_LOG(LogTemp, Warning, TEXT("Yaw : %f"), CharacterYaw);
-			UE_LOG(LogTemp, Warning, TEXT("UpdatedYaw : %f"), UpdatedYaw);
+			// UE_LOG(LogTemp, Warning, TEXT("Yaw : %f"), CharacterYaw);
+			// UE_LOG(LogTemp, Warning, TEXT("UpdatedYaw : %f"), UpdatedYaw);
 
 			if (UpdatedPitch > 180 || UpdatedPitch < -180) UpdatedPitch = InPitch;
-			if (UpdatedYaw > 180 || UpdatedYaw < -180) UpdatedYaw = InYaw;
+			if (UpdatedYaw > 200 || UpdatedYaw < -200) UpdatedYaw = InYaw;
+			
 			OutPitch = CurrentPitchTarget;
 			OutYaw = CurrentYawTarget;
 		}
