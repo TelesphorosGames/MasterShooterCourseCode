@@ -370,7 +370,16 @@ void AMainCharacter::FireOneBullet()
 			}
 
 			FVector BeamEnd;
-			GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
+
+			if(bCrouching)
+			{
+				BeamEnd = CrossHairPublicHit;
+			}
+			else
+			{
+				GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
+			}
+			
 
 			if (ImpactParticles && !bNothingHit)
 			{
@@ -459,6 +468,11 @@ void AMainCharacter::FireWeapon()
 		EquippedWeapon->DecreaseAmmo();
 		// Handles the Timer attached to the gun's fire rate
 		StartFireTimer();
+
+		if(EquippedWeapon->GetWeaponType()==EWeaponType::EWT_Pistol)
+		{
+			EquippedWeapon->StartSlideTimer();
+		}
 	}
 }
 
@@ -473,6 +487,7 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 	{
 		OutBeamLocation = CrosshairHitResult.Location;
 		CrossHairPublicHit = CrosshairHitResult.Location;
+		
 	}
 
 	FHitResult WeaponTraceHit;
@@ -486,6 +501,7 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 	{
 		OutBeamLocation = WeaponTraceHit.Location;
 		bNothingHit = false;
+		
 		return true;
 	}
 
@@ -630,33 +646,42 @@ void AMainCharacter::CalculateCrosshairSpread(float DeltaTime)
 
 	if (GetCharacterMovement()->IsFalling())
 	{
-		CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 1.25f, DeltaTime, 10.0f);
+		CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 1.f, DeltaTime, 10.f);
 	}
 	else
 	{
-		CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 0.f, DeltaTime, 10.25f);
+		CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 0.f, DeltaTime, 10.f);
 	}
 
 	if (bAiming)
 	{
-		CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, 1.f, DeltaTime, 10.5f);
+		CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, .5f, DeltaTime, 10.f);
 	}
 	else
 	{
-		CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, 0.f, DeltaTime, 10.5f);
+		CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, 0.f, DeltaTime, 10.f);
 	}
 
 	if (bFiringBullet)
 	{
-		CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, .5f, DeltaTime, 10.f);
+		CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 1.f, DeltaTime, 10.f);
 	}
 	else
 	{
 		CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 0.f, DeltaTime, 10.f);
 	}
 
-	CrosshairSpreadMultiplier = 0.5f + CrosshairVelocityFactor + CrosshairInAirFactor - (CrosshairAimFactor / 2) +
-		CrosshairShootingFactor;
+	if(bCrouching)
+	{
+		CrosshairCrouchingFactor = FMath::FInterpTo(CrosshairCrouchingFactor, 1.f, DeltaTime, 10.f);
+	}
+	else
+	{
+		CrosshairCrouchingFactor = FMath::FInterpTo(CrosshairCrouchingFactor, 0.f, DeltaTime, 10.f);
+	}
+
+	CrosshairSpreadMultiplier = 1.f + CrosshairVelocityFactor/1.5  + CrosshairInAirFactor - CrosshairAimFactor +
+		CrosshairShootingFactor - CrosshairCrouchingFactor ;
 }
 
 void AMainCharacter::StartCrossHairBulletFire()
@@ -795,9 +820,13 @@ void AMainCharacter::EquipWeapon(AWeapon* WeaponToEquip)
 			{
 				ARHandSocket->AttachActor(WeaponToEquip, GetMesh());
 			}
-
-
+		case EWeaponType::EWT_Pistol:
+			if (HandSocket)
+			{
+				HandSocket->AttachActor(WeaponToEquip, GetMesh());
+			}
 			break;
+		
 		default:
 			;
 		}
@@ -1066,6 +1095,10 @@ void AMainCharacter::FinishReloading()
 void AMainCharacter::FinishEquipping()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	if(bAimingButtonPressed)
+	{
+		Aim();
+	}
 }
 
 void AMainCharacter::FinishDisarming()
@@ -1159,6 +1192,8 @@ void AMainCharacter::ExchangeInventoryItems(int32 CurrentIndex, int32 NewItemInd
 	if (CurrentIndex == NewItemIndex || NewItemIndex >= Inventory.Num()) return;
 	if (CombatState == ECombatState::ECS_Unoccupied)
 	{
+		if(bAiming) StopAiming();
+		
 		WeaponInExchange = EquippedWeapon;
 		auto OldEquippedWeapon = EquippedWeapon;
 		auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
@@ -1251,9 +1286,9 @@ void AMainCharacter::AutoFireReset()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
 
-	if (WeaponHasAmmo())
+	if (EquippedWeapon && WeaponHasAmmo())
 	{
-		if (bFireButtonPressed)
+		if (bFireButtonPressed && EquippedWeapon->GetAutomatic())
 		{
 			FireWeapon();
 		}
@@ -1293,7 +1328,7 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 		if (OutHit.bBlockingHit)
 		{
 			OutHitBeamEnd = OutHit.Location;
-
+			
 			return true;
 		}
 	}

@@ -64,8 +64,10 @@ struct FWeaponDataTable : public FTableRowBase
 	UParticleSystem* MuzzleFlash;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	USoundCue* FireSound;
-	
-	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	FName BoneToHide;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	bool bAutomatic;
 
 	
 };
@@ -98,6 +100,7 @@ public:
 	FORCEINLINE float GetAutoFireRate() const {return AutoFireRate ;}
 	FORCEINLINE UParticleSystem* GetMuzzleFlash() const {return MuzzleFlash ;}
 	FORCEINLINE USoundCue* GetFireSound() const {return FireSound ;}
+	FORCEINLINE bool GetAutomatic() const {return bAutomatic ;}
 
 
 	
@@ -110,12 +113,20 @@ public:
 	
 	bool ClipIsFull();
 
+	void StartSlideTimer();
+
 protected:
 	
 	
 	void StopFalling();
 
 	virtual void OnConstruction(const FTransform& Transform) override;
+
+	virtual void BeginPlay() override;
+
+	void FinishMovingSlide();
+
+	void UpdateSlideDisplacement();
 	
 private:
 	FTimerHandle ThrowWeaponTimer;
@@ -174,7 +185,24 @@ private:
 	UParticleSystem* MuzzleFlash;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
 	USoundCue* FireSound;
-
-
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	FName BoneToHide;
+	/* Will drive the slide animation during pistol fire */
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	float SlideDisplacement;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	UCurveFloat* SlideDisplacementCurve;
+	FTimerHandle SlideTimer;
+	float SlideDisplacementTime;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	bool bMovingSlide;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	float MaxSlideDisplacement;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	float MaxRecoilRotation;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	float RecoilRoation;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	bool bAutomatic;
 	
 };

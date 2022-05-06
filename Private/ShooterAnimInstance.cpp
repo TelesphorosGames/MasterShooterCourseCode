@@ -278,10 +278,7 @@ void UShooterAnimInstance::AdjustAimOffset(float& OutYaw, float& OutPitch, const
 
 			float YScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.Y, 0, ViewportSize.Y);
 			float XScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.X, 0, ViewportSize.X);
-
-			float CurrentPitchTarget = UKismetMathLibrary::Lerp(InYaw, UpdatedYaw, 1);
-			float CurrentYawTarget = UKismetMathLibrary::Lerp(InPitch, UpdatedPitch, 1);
-
+			
 			if (!(YScreenSpacePercent > .49f && YScreenSpacePercent < .51f))
 			{
 				if (YScreenSpacePercent < .49f)
@@ -307,9 +304,13 @@ void UShooterAnimInstance::AdjustAimOffset(float& OutYaw, float& OutPitch, const
 			}
 			// UE_LOG(LogTemp, Warning, TEXT("Yaw : %f"), CharacterYaw);
 			// UE_LOG(LogTemp, Warning, TEXT("UpdatedYaw : %f"), UpdatedYaw);
-
+			
+			float CurrentPitchTarget = UKismetMathLibrary::Lerp(InYaw, UpdatedYaw, 1);
+			float CurrentYawTarget = UKismetMathLibrary::Lerp(InPitch, UpdatedPitch, 1);
+			
 			if (UpdatedPitch > 180 || UpdatedPitch < -180) UpdatedPitch = InPitch;
 			if (UpdatedYaw > 200 || UpdatedYaw < -200) UpdatedYaw = InYaw;
+
 			
 			OutPitch = CurrentPitchTarget;
 			OutYaw = CurrentYawTarget;
@@ -324,7 +325,7 @@ void UShooterAnimInstance::Lean(float DeltaTime)
 	LeanCharacterRotation = ShooterCharacter->GetActorRotation();
 
 	const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(
-		LeanCharacterRotation, LeanCharacterRotationLastFrame);
+	LeanCharacterRotation, LeanCharacterRotationLastFrame);
 
 	// This gives us a measure of how quickly we are turning
 	const float TargetYaw = DeltaRotation.Yaw / DeltaTime;

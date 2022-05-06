@@ -158,6 +158,8 @@ private:
 	float CrosshairAimFactor;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
 	float CrosshairShootingFactor;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="My Stuff | Combat", meta = (AllowPrivateAccess = true))
+	float CrosshairCrouchingFactor;
 
 	bool bFiringBullet;
 

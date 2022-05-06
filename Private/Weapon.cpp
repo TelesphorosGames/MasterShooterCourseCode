@@ -11,7 +11,12 @@ AWeapon::AWeapon():
 	WeaponType(EWeaponType::EWT_SubmachineGun),
 	AmmoType(EAmmoType::EAT_Pistol),
 	ReloadMontageSection(FName(TEXT("Reload_SMG"))),
-	ClipBoneName(TEXT("smg_clip"))
+	ClipBoneName(TEXT("smg_clip")),
+	bMovingSlide(false),
+	MaxSlideDisplacement(3.f),
+	SlideDisplacementTime(.15f),
+	MaxRecoilRotation(4.f),
+	bAutomatic(true)
 
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -28,6 +33,8 @@ void AWeapon::Tick(float DeltaTime)
 		const FRotator MeshRotation = {0.f, GetItemMesh()->GetComponentRotation().Yaw, 0.f};
 		GetItemMesh()->SetWorldRotation(MeshRotation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
+
+	UpdateSlideDisplacement();
 }
 
 void AWeapon::ThrowWeapon()
@@ -100,6 +107,12 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			WeaponDataRow = WeaponDataTableObject->FindRow<FWeaponDataTable>(FName("AR"), TEXT(""));
 
 			break;
+
+		case EWeaponType::EWT_Pistol:
+			WeaponDataRow = WeaponDataTableObject->FindRow<FWeaponDataTable>(FName("Pistol"), TEXT(""));
+
+			break;
+			
 		default:
 			;
 		}
@@ -131,6 +144,9 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			AutoFireRate = WeaponDataRow->AutoFireRate;
 			MuzzleFlash = WeaponDataRow->MuzzleFlash;
 			FireSound = WeaponDataRow->FireSound;
+			BoneToHide = WeaponDataRow->BoneToHide;
+			bAutomatic = WeaponDataRow->bAutomatic;
+			
 		}
 		if (GetMaterialInstance())
 		{
@@ -142,7 +158,40 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 	}
 }
 
+void AWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(BoneToHide!=FName(""))
+	{
+		GetItemMesh()->HideBoneByName(BoneToHide, EPhysBodyOp::PBO_None);
+	}
+	
+}
+
+void AWeapon::FinishMovingSlide()
+{
+	bMovingSlide=false;
+}
+
+void AWeapon::UpdateSlideDisplacement()
+{
+	if(SlideDisplacementCurve && bMovingSlide)
+	{
+		const float ElapsedTime =GetWorldTimerManager().GetTimerElapsed(SlideTimer);
+		const float CurveValue = SlideDisplacementCurve->GetFloatValue(ElapsedTime);
+		SlideDisplacement = CurveValue * MaxSlideDisplacement;
+		RecoilRoation=CurveValue*MaxRecoilRotation;
+	}
+}
+
 bool AWeapon::ClipIsFull()
 {
 	return AmmoCount >= MagazineSize;
+}
+
+void AWeapon::StartSlideTimer()
+{
+	bMovingSlide=true;
+	GetWorldTimerManager().SetTimer(SlideTimer, this, &AWeapon::FinishMovingSlide, SlideDisplacementTime);
 }
