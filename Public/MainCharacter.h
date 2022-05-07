@@ -378,6 +378,12 @@ protected:
 
 	int32 GetEmptyInventorySlot();
 
+	UFUNCTION(BlueprintCallable)
+	EPhysicalSurface GetSurfaceType();
+
+	
+	
+
 public:	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")

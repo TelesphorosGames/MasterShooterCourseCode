@@ -16,6 +16,8 @@
 #include "Weapon.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "MasterShooterCourse/MasterShooterCourse.h"
 
 
 // Sets default values
@@ -655,7 +657,7 @@ void AMainCharacter::CalculateCrosshairSpread(float DeltaTime)
 
 	if (bAiming)
 	{
-		CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, .5f, DeltaTime, 10.f);
+		CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, .75f, DeltaTime, 10.f);
 	}
 	else
 	{
@@ -1244,6 +1246,20 @@ int32 AMainCharacter::GetEmptyInventorySlot()
 
 
 	return -1;
+}
+
+EPhysicalSurface AMainCharacter::GetSurfaceType()
+{
+	FHitResult HitResult;
+
+	const FVector Start = GetActorLocation();
+	const FVector End = Start + FVector (0.f, 0.f, -400.f);
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.bReturnPhysicalMaterial = true;
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, QueryParams);
+
+	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 }
 
 void AMainCharacter::HighlightInventorySlot()
