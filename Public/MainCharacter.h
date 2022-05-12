@@ -87,6 +87,7 @@ public:
 	FVector BeamEndPublic;
 
 	FVector CrosshairToWorld;
+	FHitResult PublicCrosshairHitResult;
 
 	FVector CrossHairPublicHit = {0,0,0};
 	

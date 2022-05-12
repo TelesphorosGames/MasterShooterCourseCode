@@ -11,7 +11,10 @@
 
 
 // Sets default values
-AEnemy::AEnemy()
+AEnemy::AEnemy() :
+Health(100.f),
+MaxHealth(100.f),
+HealthBarDisplayTime(4.f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -25,6 +28,30 @@ void AEnemy::BeginPlay()
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	
+	
+}
+
+void AEnemy::ShowHealthBar_Implementation()
+{
+	GetWorldTimerManager().ClearTimer(HealthBarTimer);
+	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AEnemy::HideHealthBar, HealthBarDisplayTime);
+}
+
+void AEnemy::EnemyDeath()
+{
+	HideHealthBar();
+}
+
+void AEnemy::PlayHitMontage(FName Section, float PlayRate)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance)
+	{
+		AnimInstance->Montage_Play(HitMontage, PlayRate);
+		AnimInstance->Montage_JumpToSection(Section, HitMontage);
+	}
+
+
 	
 }
 
@@ -52,6 +79,26 @@ void AEnemy::BulletHit_Implementation(FHitResult HitResult)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, HitResult.Location, FRotator(0.f), true);
 	}
+	ShowHealthBar();
 
+	PlayHitMontage(FName("HitReact1"));
+}
+
+float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+	AActor* DamageCauser)
+{
+	if(Health-DamageAmount<=0.f)
+	{
+		Health=0.f;
+		GetWorldTimerManager().ClearTimer(HealthBarTimer);
+		GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AEnemy::EnemyDeath, HealthBarDisplayTime);
+	}
+	else
+	{
+		Health-=DamageAmount;
+		
+	}
+		return DamageAmount;
+	
 }
 

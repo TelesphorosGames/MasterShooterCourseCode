@@ -5,6 +5,7 @@
 
 #include "Ammo.h"
 #include "BulletHitInterface.h"
+#include "Enemy.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -374,7 +375,7 @@ void AMainCharacter::FireOneBullet()
 
 			if(bCrouching)
 			{
-				BeamHitResult.Location = CrossHairPublicHit;
+				BeamHitResult= PublicCrosshairHitResult;
 			}
 			else
 			{
@@ -388,7 +389,28 @@ void AMainCharacter::FireOneBullet()
 				{
 					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
 				}
-			
+				AEnemy* HitEnemy = Cast<AEnemy>(BeamHitResult.GetActor());
+				if(HitEnemy)
+				{
+					if(BeamHitResult.BoneName.ToString() == HitEnemy->GetHeadBone())
+					{
+						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), EquippedWeapon->GetHeadShotDamage(), GetController(), this, UDamageType::StaticClass());
+					}
+					else
+					{
+						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), EquippedWeapon->GetDamage(), GetController(), this, UDamageType::StaticClass());
+					}
+					UE_LOG(LogTemp, Warning, TEXT("%s"), *BeamHitResult.BoneName.ToString());
+					
+					
+				}
+			}
+			else
+			{
+				
+					
+				
+			}
 				if (ImpactParticles)
 				{
 					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
@@ -399,7 +421,7 @@ void AMainCharacter::FireOneBullet()
 						GetWorld(), BeamParticles, SocketTransform);
 					Beam->SetVectorParameter(FName("Target"), BeamHitResult.Location);
 				}
-			}
+			
 		}
 	}
 }
@@ -498,12 +520,11 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHi
 	if (bCrosshairHit)
 	{
 		OutBeamLocation = CrosshairHitResult.Location;
-		CrossHairPublicHit = CrosshairHitResult.Location;
+		OutHitResult = CrosshairHitResult;
 		
 	}
 
 	const FVector WeaponTraceStart = MuzzleSocketLocation;
-
 	const FVector WeaponTraceEnd = EquippedWeapon->GetItemMesh()->GetChildComponent(6)->GetComponentLocation();
 
 	GetWorld()->LineTraceSingleByChannel(OutHitResult, WeaponTraceStart, WeaponTraceEnd, ECC_Visibility);
@@ -1351,6 +1372,8 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 		if (OutHit.bBlockingHit)
 		{
 			OutHitBeamEnd = OutHit.Location;
+			CrossHairPublicHit = OutHit.Location;
+			PublicCrosshairHitResult = OutHit;
 			
 			return true;
 		}

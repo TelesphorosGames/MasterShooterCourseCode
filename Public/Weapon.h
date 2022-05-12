@@ -68,6 +68,10 @@ struct FWeaponDataTable : public FTableRowBase
 	FName BoneToHide;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	bool bAutomatic;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	float Damage;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	float HeadShotDamage;
 
 	
 };
@@ -101,6 +105,8 @@ public:
 	FORCEINLINE UParticleSystem* GetMuzzleFlash() const {return MuzzleFlash ;}
 	FORCEINLINE USoundCue* GetFireSound() const {return FireSound ;}
 	FORCEINLINE bool GetAutomatic() const {return bAutomatic ;}
+	FORCEINLINE float GetDamage() const {return Damage ;}
+	FORCEINLINE float GetHeadShotDamage() const {return HeadShotDamage ; }
 
 
 	
@@ -162,30 +168,30 @@ private:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
 	bool bMovingClip;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	UDataTable* WeaponDataTable;
 
 	
 	int32 PreviousMaterialIndex;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	UTexture2D* CrossHairsMiddle;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	UTexture2D* CrosshairsTop;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	UTexture2D* CrosshairsBottom;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	UTexture2D* CrosshairsLeft;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	UTexture2D* CrosshairsRight;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	float AutoFireRate;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	UParticleSystem* MuzzleFlash;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	USoundCue* FireSound;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff | Data Tables", meta=(AllowPrivateAccess=true))
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff| Data Tables", meta=(AllowPrivateAccess=true))
 	FName BoneToHide;
 	/* Will drive the slide animation during pistol fire */
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess=true))
@@ -204,5 +210,8 @@ private:
 	float RecoilRoation;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess=true))
 	bool bAutomatic;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	float Damage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess=true))
+	float HeadShotDamage;
 };

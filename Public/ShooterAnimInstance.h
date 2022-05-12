@@ -45,8 +45,6 @@ protected:
 	void AdjustAimOffset(float &OutYaw, float &OutPitch,  const float InYaw = 0.f, const float InPitch =0.f);
 	//Handles Calculations for leaning while running
 	void Lean(float DeltaTime);
-
-	
 	
 	void SetRecoilAndReloadWeights();
 	
@@ -64,7 +62,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Movement", meta = (AllowPrivateAccess = true))
 	bool bIsAccelerating;
 	
-
 	/**
 	 * @brief This value is required in order for our animation to understand which way it should be strafing,
 	 * according to calculations done between the movement speed and movement direction. It allows our blendspaces
