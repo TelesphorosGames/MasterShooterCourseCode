@@ -64,7 +64,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent*  PlayerInputComponent) override;
 	
-	bool GetBeamEndLocation(const FVector &MuzzleSocketLocation, FVector &OutBeamLocation);
+	bool GetBeamEndLocation(const FVector &MuzzleSocketLocation, FHitResult &OutHitResult);
 
 
 	

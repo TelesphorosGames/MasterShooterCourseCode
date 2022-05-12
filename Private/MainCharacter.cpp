@@ -4,6 +4,7 @@
 #include "MainCharacter.h"
 
 #include "Ammo.h"
+#include "BulletHitInterface.h"
 #include "Camera/CameraComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -369,27 +370,35 @@ void AMainCharacter::FireOneBullet()
 				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransform);
 			}
 
-			FVector BeamEnd;
+			FHitResult BeamHitResult;
 
 			if(bCrouching)
 			{
-				BeamEnd = CrossHairPublicHit;
+				BeamHitResult.Location = CrossHairPublicHit;
 			}
 			else
 			{
-				GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
+				GetBeamEndLocation(SocketTransform.GetLocation(), BeamHitResult);
 			}
 			
-
-			if (ImpactParticles && !bNothingHit)
+			if(IsValid(BeamHitResult.GetActor()))
 			{
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
-			}
-			if (BeamParticles)
-			{
-				UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
-					GetWorld(), BeamParticles, SocketTransform);
-				Beam->SetVectorParameter(FName("Target"), BeamEnd);
+				IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.GetActor());
+				if(BulletHitInterface)
+				{
+					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+				}
+			
+				if (ImpactParticles)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+				}
+				if (BeamParticles)
+				{
+					UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(
+						GetWorld(), BeamParticles, SocketTransform);
+					Beam->SetVectorParameter(FName("Target"), BeamHitResult.Location);
+				}
 			}
 		}
 	}
@@ -477,9 +486,12 @@ void AMainCharacter::FireWeapon()
 }
 
 
-bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
+bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult &OutHitResult)
 {
 	FHitResult CrosshairHitResult;
+	FVector OutBeamLocation;
+
+	
 
 	bool bCrosshairHit = TraceUnderCrosshairs(CrosshairHitResult, OutBeamLocation);
 
@@ -490,23 +502,21 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVe
 		
 	}
 
-	FHitResult WeaponTraceHit;
-
 	const FVector WeaponTraceStart = MuzzleSocketLocation;
 
 	const FVector WeaponTraceEnd = EquippedWeapon->GetItemMesh()->GetChildComponent(6)->GetComponentLocation();
 
-	GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECC_Visibility);
-	if (WeaponTraceHit.bBlockingHit)
+	GetWorld()->LineTraceSingleByChannel(OutHitResult, WeaponTraceStart, WeaponTraceEnd, ECC_Visibility);
+	if (!OutHitResult.bBlockingHit)
 	{
-		OutBeamLocation = WeaponTraceHit.Location;
-		bNothingHit = false;
+		OutHitResult.Location = OutBeamLocation;
+		bNothingHit = true;
 		
-		return true;
+		return false;
 	}
 
-	OutBeamLocation = BeamEndPublic;
-	bNothingHit = true;
+	BeamEndPublic = OutBeamLocation;
+	bNothingHit = false;
 	return true;
 }
 
