@@ -52,7 +52,7 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		bEquipping = ShooterCharacter->GetCombatState() == ECombatState::ECS_PickingUpWeapon;
 
 		bShouldUseFabrik = ShooterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied || ShooterCharacter->
-			GetCombatState() == ECombatState::ECS_FireTimerInProgress || ShooterCharacter->GetCombatState() == ECombatState::ECS_PickingUpWeapon;
+			GetCombatState() == ECombatState::ECS_FireTimerInProgress;
 
 		//Get lateral Speed of Character from Velocity - speed from falling is not taken into account
 		FVector Velocity = ShooterCharacter->GetVelocity();
@@ -305,12 +305,12 @@ void UShooterAnimInstance::AdjustAimOffset(float& OutYaw, float& OutPitch, const
 			// UE_LOG(LogTemp, Warning, TEXT("Yaw : %f"), CharacterYaw);
 			// UE_LOG(LogTemp, Warning, TEXT("UpdatedYaw : %f"), UpdatedYaw);
 			
-			float CurrentPitchTarget = UKismetMathLibrary::Lerp(InYaw, UpdatedYaw, 1);
-			float CurrentYawTarget = UKismetMathLibrary::Lerp(InPitch, UpdatedPitch, 1);
-			
 			if (UpdatedPitch > 180 || UpdatedPitch < -180) UpdatedPitch = InPitch;
 			if (UpdatedYaw > 200 || UpdatedYaw < -200) UpdatedYaw = InYaw;
 
+			float CurrentPitchTarget = UKismetMathLibrary::Lerp(InYaw, UpdatedYaw, 0);
+			float CurrentYawTarget = UKismetMathLibrary::Lerp(InPitch, UpdatedPitch, 0);
+			
 			
 			OutPitch = CurrentPitchTarget;
 			OutYaw = CurrentYawTarget;

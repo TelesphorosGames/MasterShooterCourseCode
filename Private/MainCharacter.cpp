@@ -295,7 +295,11 @@ void AMainCharacter::Jump()
 	if (bCrouching)
 	{
 		bCrouching = false;
-		GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+		if(!bAiming)
+		{
+			GetCharacterMovement()->MaxWalkSpeed = BaseMovementSpeed;
+		}
+		
 	}
 	else
 	{
@@ -310,16 +314,10 @@ void AMainCharacter::StopJumping()
 
 void AMainCharacter::AdjustCameraLengthUp()
 {
-	if (!CameraBoom) return;
-
-	if (CameraBoom->TargetArmLength <= 00.f)
-	{
-		return;
-	}
-	else
-	{
-		CameraBoom->TargetArmLength -= 30.f;
-	}
+	if (!CameraBoom || CameraBoom->TargetArmLength <= 60.f) return;
+		
+	CameraBoom->TargetArmLength -= 30.f;
+	
 }
 
 void AMainCharacter::AdjustCameraLengthDown()
@@ -560,6 +558,7 @@ void AMainCharacter::StopAiming()
 					GetItemBeingLookedAt()->DisableCustomDepth();
 				}
 			}
+			UnHighlightInventorySlot();
 		}
 	}
 	if (bCrouching)
@@ -621,8 +620,7 @@ int32 AMainCharacter::GetInterpLocationIndex()
 			LowestCount = InterpLocations[i].ItemCount;
 		}
 	}
-
-
+	
 	return LowestIndex;
 }
 
@@ -1025,7 +1023,6 @@ void AMainCharacter::ReloadWeapon()
 		if (AnimInstance && ReloadMontage)
 		{
 			AnimInstance->Montage_Play(ReloadMontage);
-			//TODO : Switch on equipped weapon type
 			AnimInstance->Montage_JumpToSection(EquippedWeapon->GetReloadMontageSection());
 		}
 		if (bAiming)
