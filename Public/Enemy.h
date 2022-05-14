@@ -17,6 +17,10 @@ public:
 	AEnemy();
 
 	FORCEINLINE FString GetHeadBone() const {return HeadBone ; }
+	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const {return BehaviorTree; }
+	
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowHitNumber(int32 Damage, FVector HitLocation, bool bHeadShot);
 
 protected:
 	// Called when the game starts or when spawned
@@ -32,6 +36,14 @@ protected:
 	void EnemyDeath();
 
 	void PlayHitMontage(FName Section, float PlayRate = 1.0f);
+
+	UFUNCTION(BlueprintCallable)
+	void StoreHitNumer(UUserWidget* HitNumber, FVector Location);
+
+	UFUNCTION()
+	void DestroyHitNumber(UUserWidget* HitNumber);
+
+	void UpdateHitNumbers();
 	
 private:
 	
@@ -56,6 +68,18 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
 	UAnimMontage* HitMontage;
 
+	// Map that stores hit number widgets and their corresponding hit locations ( FOR PROJECTING TO SCREEN )
+	UPROPERTY(VisibleAnywhere, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	TMap<UUserWidget*, FVector> HitNumbers;
+// How long before the hit numbers are removed from screen
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	float HitNumberDestoryTime;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	class UBehaviorTree* BehaviorTree;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="My Stuff", meta=(AllowPrivateAccess="true", MakeEditWidget="true"))
+	FVector PatrolPoint;
+	UPROPERTY(VisibleAnywhere, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	class AEnemyController* EnemyController;
 	
 public:	
 	// Called every frame

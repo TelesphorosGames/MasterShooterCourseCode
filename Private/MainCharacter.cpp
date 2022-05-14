@@ -392,13 +392,23 @@ void AMainCharacter::FireOneBullet()
 				AEnemy* HitEnemy = Cast<AEnemy>(BeamHitResult.GetActor());
 				if(HitEnemy)
 				{
+
+					int32 Damage = {0};
+					
+					
 					if(BeamHitResult.BoneName.ToString() == HitEnemy->GetHeadBone())
 					{
 						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), EquippedWeapon->GetHeadShotDamage(), GetController(), this, UDamageType::StaticClass());
+						Damage=EquippedWeapon->GetHeadShotDamage();
+						HitEnemy->ShowHitNumber(Damage, BeamHitResult.Location, true);
 					}
 					else
 					{
-						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), EquippedWeapon->GetDamage(), GetController(), this, UDamageType::StaticClass());
+
+						Damage=FMath::RandRange(EquippedWeapon->GetDamage()-5, EquippedWeapon->GetDamage()+5);
+						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), Damage, GetController(), this, UDamageType::StaticClass());
+					
+						HitEnemy->ShowHitNumber(Damage, BeamHitResult.Location, false);
 					}
 					UE_LOG(LogTemp, Warning, TEXT("%s"), *BeamHitResult.BoneName.ToString());
 					
