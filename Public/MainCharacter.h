@@ -66,6 +66,8 @@ public:
 	
 	bool GetBeamEndLocation(const FVector &MuzzleSocketLocation, FHitResult &OutHitResult);
 
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 
 	
 protected:
@@ -90,6 +92,8 @@ public:
 	FHitResult PublicCrosshairHitResult;
 
 	FVector CrossHairPublicHit = {0,0,0};
+
+	
 	
 private:
 	
@@ -280,6 +284,13 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Inventory", meta =(AllowPrivateAccess = true))
 	AWeapon* NewWeaponInExchange;
+
+	// Character's Health
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	float Health;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	float MaxHealth;
+	
 
 protected:
 	

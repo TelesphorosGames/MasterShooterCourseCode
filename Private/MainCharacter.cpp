@@ -59,7 +59,9 @@ AMainCharacter::AMainCharacter() :
 	AimingLookUpRate(25.f),
 	bShouldFire(true),
 	HighlightedSlot(-1),
-	WeaponInExchange(nullptr)
+	WeaponInExchange(nullptr),
+	Health(100.f),
+	MaxHealth(100.f)
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -556,6 +558,20 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHi
 	}
 
 	return true;
+}
+
+float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
+	AActor* DamageCauser)
+{
+	if(Health-DamageAmount<=0.f)
+	{
+		Health = 0.f;
+	}
+	else
+	{
+		Health-=DamageAmount;
+	}
+	return DamageAmount;
 }
 
 void AMainCharacter::AimingButtonPressed()
