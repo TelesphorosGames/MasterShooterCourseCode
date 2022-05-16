@@ -42,7 +42,7 @@ protected:
 	void TurnInPlace();
 	// Adjusts the character's pitch and yaw values to ensure the gun is pointing at the center of the screen
 	UFUNCTION(BlueprintCallable)
-	void AdjustAimOffset(float &OutYaw, float &OutPitch,  const float InYaw = 0.f, const float InPitch =0.f);
+	void AdjustAimOffset(const float InYaw = 0.f, const float InPitch =0.f);
 	//Handles Calculations for leaning while running
 	void Lean(float DeltaTime);
 	

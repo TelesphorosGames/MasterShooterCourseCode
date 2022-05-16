@@ -111,7 +111,7 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	{
 		EquippedWeaponType = ShooterCharacter->GetEquippedWeapon()->GetWeaponType();
 	}
-	AdjustAimOffset(LastMovementOffsetYaw, Pitch, UpdatedYaw, UpdatedPitch);
+	AdjustAimOffset(UpdatedYaw, UpdatedPitch);
 	TurnInPlace();
 	Lean(DeltaTime);
 	SetRecoilAndReloadWeights();
@@ -257,21 +257,21 @@ void UShooterAnimInstance::TurnInPlace()
 	}
 }
 
-void UShooterAnimInstance::AdjustAimOffset(float& OutYaw, float& OutPitch, const float InYaw,const float InPitch)
+void UShooterAnimInstance::AdjustAimOffset(const float InYaw,const float InPitch)
 {
 	if (!ShooterCharacter || bReloading || bEquipping) return;
 
 	if (ShooterCharacter->GetEquippedWeapon())
 	{
 		FVector2D ViewportSize;
-
-		FVector BulletTarget;
-		FHitResult StupidStupidStupid;
+		
+		FHitResult BulletTarget;
+		
 		ShooterCharacter->GetBeamEndLocation(
 			ShooterCharacter->GetEquippedWeapon()->GetItemMesh()->GetSocketLocation(FName("BarrelSocket")),
-			StupidStupidStupid);
+			BulletTarget);
 
-		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), StupidStupidStupid.Location, BulletTarget2d);
+		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), BulletTarget.Location, BulletTarget2d);
 		
 		if (GEngine && GEngine->GameViewport)
 		{
@@ -303,18 +303,24 @@ void UShooterAnimInstance::AdjustAimOffset(float& OutYaw, float& OutPitch, const
 					UpdatedYaw += FMath::Abs(.5f - XScreenSpacePercent) * 25;
 				}
 			}
-			// UE_LOG(LogTemp, Warning, TEXT("Yaw : %f"), CharacterYaw);
-			// UE_LOG(LogTemp, Warning, TEXT("UpdatedYaw : %f"), UpdatedYaw);
-			
 			if (UpdatedPitch > 180 || UpdatedPitch < -180) UpdatedPitch = InPitch;
 			if (UpdatedYaw > 200 || UpdatedYaw < -200) UpdatedYaw = InYaw;
 
-			float CurrentPitchTarget = UKismetMathLibrary::Lerp(InYaw, UpdatedYaw, 0);
-			float CurrentYawTarget = UKismetMathLibrary::Lerp(InPitch, UpdatedPitch, 0);
+
+
+
+
 			
-			
-			OutPitch = CurrentPitchTarget;
-			OutYaw = CurrentYawTarget;
+			// UE_LOG(LogTemp, Warning, TEXT("Yaw : %f"), CharacterYaw);
+			// UE_LOG(LogTemp, Warning, TEXT("UpdatedYaw : %f"), UpdatedYaw);
+		
+			//
+			// float CurrentPitchTarget = UKismetMathLibrary::Lerp(InYaw, UpdatedYaw, 0);
+			// float CurrentYawTarget = UKismetMathLibrary::Lerp(InPitch, UpdatedPitch, 0);
+			//
+			//
+			// OutPitch = CurrentPitchTarget;
+			// OutYaw = CurrentYawTarget;
 		}
 	}
 }

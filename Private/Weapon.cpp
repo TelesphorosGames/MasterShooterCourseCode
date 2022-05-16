@@ -35,6 +35,10 @@ void AWeapon::Tick(float DeltaTime)
 	}
 
 	UpdateSlideDisplacement();
+
+
+
+	
 }
 
 void AWeapon::ThrowWeapon()

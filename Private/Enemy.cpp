@@ -5,8 +5,11 @@
 
 
 #include "EnemyController.h"
+#include "MainCharacter.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/SphereComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Sound/SoundCue.h"
@@ -20,11 +23,21 @@ AEnemy::AEnemy() :
 Health(100.f),
 MaxHealth(100.f),
 HealthBarDisplayTime(4.f),
-HitNumberDestoryTime(2.5f)
+HitNumberDestoryTime(2.5f),
+bStunned(false),
+StunnedChance(.5f),
+Attack1(TEXT("Attack1")),
+Attack2(TEXT("Attack2"))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+
+	AgroSphere=CreateDefaultSubobject<USphereComponent>(TEXT("AgroSphere"));
+	AgroSphere->SetupAttachment(GetRootComponent());
+
+	AttackRangeSphere=CreateDefaultSubobject<USphereComponent>(TEXT("AttackRangeSphere"));
+	AttackRangeSphere->SetupAttachment(GetRootComponent());
 }
 
 // Called when the game starts or when spawned
@@ -36,17 +49,22 @@ void AEnemy::BeginPlay()
 
 	
 	const FVector WorldPatrolPoint = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint);
-	DrawDebugSphere(GetWorld(), WorldPatrolPoint, 25.f, 12, FColor::Red, true);
+	const FVector WorldPatrolPoint2 = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint2);
+	// DrawDebugSphere(GetWorld(), WorldPatrolPoint, 25.f, 12, FColor::Red, true);
 	EnemyController = Cast<AEnemyController>(GetController());
 	if(EnemyController)
 	{
 		EnemyController->GetMyBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
+		EnemyController->GetMyBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint2"), WorldPatrolPoint2);
 
 		EnemyController->RunBehaviorTree(BehaviorTree);
 		
 	}
+
+	AgroSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::AgroSphereOverlap);
 	
-	
+	AttackRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::AttackRangeSphereOverlap);
+	AttackRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::AttackRangeEndOverlap);
 	
 }
 
@@ -69,8 +87,36 @@ void AEnemy::PlayHitMontage(FName Section, float PlayRate)
 		AnimInstance->Montage_Play(HitMontage, PlayRate);
 		AnimInstance->Montage_JumpToSection(Section, HitMontage);
 	}
+}
 
+void AEnemy::PlayAttackMontage(FName Section, float PlayRate)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance)
+	{
+		AnimInstance->Montage_Play(AttackMontage, PlayRate);
+		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
+	}
+}
 
+FName AEnemy::GetAttackSectionName()
+{
+	FName SectionName;
+	const int32 Section = FMath::RandRange(0,1);
+	switch(Section)
+	{
+	case 0:
+		SectionName=Attack1;
+		break;
+	
+	case 1:
+		SectionName= Attack2;
+	break;
+
+	default: ;
+	}
+
+	return SectionName;
 	
 }
 
@@ -111,6 +157,73 @@ void AEnemy::UpdateHitNumbers()
 	
 }
 
+void AEnemy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if(OtherActor)
+	{
+		
+		AMainCharacter* Character = Cast<AMainCharacter>(OtherActor);
+		if(Character)
+		{
+			
+			EnemyController->GetMyBlackboardComponent()->SetValueAsObject(TEXT("Target"), Character);
+			
+		}
+	}
+}
+
+void AEnemy::SetStunned(bool Stunned)
+{
+	bStunned = Stunned;
+
+	if(EnemyController)
+	{
+		EnemyController->GetMyBlackboardComponent()->SetValueAsBool(TEXT("Stunned"), Stunned);
+	}
+	
+}
+
+void AEnemy::AttackRangeSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+
+	if(!OtherActor) return;
+	{
+		AMainCharacter* Character = Cast<AMainCharacter>(OtherActor);
+		if(Character)
+		{
+			bInAttackRange = true;
+
+			if(EnemyController)
+			{
+				EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("InAttackRange"), true);
+			}
+		}
+	}
+}
+
+void AEnemy::AttackRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+
+	if(!OtherActor) return;
+	{
+		AMainCharacter* Character = Cast<AMainCharacter>(OtherActor);
+		if(Character)
+		{
+			bInAttackRange = false;
+            
+            if(EnemyController)
+            {
+            	EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("InAttackRange"), false);
+            }
+		}
+	}
+	
+	
+}
+
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
@@ -139,7 +252,21 @@ void AEnemy::BulletHit_Implementation(FHitResult HitResult)
 	}
 	ShowHealthBar();
 
-	PlayHitMontage(FName("HitReact1"));
+	const float Stunned = FMath::FRandRange(0.f, 1.f);
+
+	if(Stunned<StunnedChance)
+	{
+		SetStunned(true);
+		PlayHitMontage(FName("HitReact2"));
+		
+	}
+	else
+	{
+		PlayHitMontage(FName("HitReact1"));
+	}
+
+	
+	
 }
 
 float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
@@ -148,6 +275,7 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 	if(Health-DamageAmount<=0.f)
 	{
 		Health=0.f;
+		GetCharacterMovement()->MaxWalkSpeed=0.f;
 		GetWorldTimerManager().ClearTimer(HealthBarTimer);
 		GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AEnemy::EnemyDeath, HealthBarDisplayTime);
 	}

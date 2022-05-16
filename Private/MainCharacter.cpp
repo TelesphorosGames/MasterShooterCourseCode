@@ -19,6 +19,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+// ReSharper disable once CppUnusedIncludeDirective
 #include "MasterShooterCourse/MasterShooterCourse.h"
 
 
@@ -116,6 +117,10 @@ void AMainCharacter::Tick(float DeltaTime)
 	SetZoomInterp(DeltaTime);
 	CalculateCrosshairSpread(DeltaTime);
 	TraceForItems();
+
+
+	
+	
 }
 
 // Called to bind functionality to input
@@ -522,9 +527,7 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHi
 {
 	FHitResult CrosshairHitResult;
 	FVector OutBeamLocation;
-
 	
-
 	bool bCrosshairHit = TraceUnderCrosshairs(CrosshairHitResult, OutBeamLocation);
 
 	if (bCrosshairHit)
@@ -537,6 +540,12 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHi
 	const FVector WeaponTraceStart = MuzzleSocketLocation;
 	const FVector WeaponTraceEnd = EquippedWeapon->GetItemMesh()->GetChildComponent(6)->GetComponentLocation();
 
+	
+	BeamEndPublic = OutBeamLocation;
+	bNothingHit = false;
+
+	
+
 	GetWorld()->LineTraceSingleByChannel(OutHitResult, WeaponTraceStart, WeaponTraceEnd, ECC_Visibility);
 	if (!OutHitResult.bBlockingHit)
 	{
@@ -546,8 +555,6 @@ bool AMainCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHi
 		return false;
 	}
 
-	BeamEndPublic = OutBeamLocation;
-	bNothingHit = false;
 	return true;
 }
 
@@ -722,7 +729,7 @@ void AMainCharacter::CalculateCrosshairSpread(float DeltaTime)
 	}
 
 	CrosshairSpreadMultiplier = 1.f + CrosshairVelocityFactor/1.5  + CrosshairInAirFactor - CrosshairAimFactor +
-		CrosshairShootingFactor - CrosshairCrouchingFactor ;
+		CrosshairShootingFactor - CrosshairCrouchingFactor/2 ;
 }
 
 void AMainCharacter::StartCrossHairBulletFire()
@@ -1155,7 +1162,7 @@ void AMainCharacter::GrabClip()
 	ClipTransform = EquippedWeapon->GetItemMesh()->GetBoneTransform(ClipBoneIndex);
 
 
-	FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, true);
+	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
 	if (HandClipLocation == nullptr) return;
 
 
@@ -1376,7 +1383,7 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 		FVector End = Start + CrossHairWorldDirection * 50000;
 		BeamEndPublic = End;
 		OutHitBeamEnd = End;
-
+		CrossHairPublicHit = End;
 		GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility);
 
 		if (OutHit.bBlockingHit)
@@ -1384,10 +1391,16 @@ bool AMainCharacter::TraceUnderCrosshairs(FHitResult& OutHit, FVector& OutHitBea
 			OutHitBeamEnd = OutHit.Location;
 			CrossHairPublicHit = OutHit.Location;
 			PublicCrosshairHitResult = OutHit;
-			
+			bNothingHit = false;
 			return true;
 		}
+		
+		
+		
+		
+	
 	}
+	
 	return false;
 }
 

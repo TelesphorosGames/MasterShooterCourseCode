@@ -36,7 +36,13 @@ protected:
 	void EnemyDeath();
 
 	void PlayHitMontage(FName Section, float PlayRate = 1.0f);
+	
+	UFUNCTION(BlueprintCallable)
+	void PlayAttackMontage(FName Section, float PlayRate = 1.0f);
 
+	UFUNCTION(BlueprintPure)
+	FName GetAttackSectionName();
+	
 	UFUNCTION(BlueprintCallable)
 	void StoreHitNumer(UUserWidget* HitNumber, FVector Location);
 
@@ -44,6 +50,19 @@ protected:
 	void DestroyHitNumber(UUserWidget* HitNumber);
 
 	void UpdateHitNumbers();
+
+    UFUNCTION()
+	void AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable)
+	void SetStunned(bool Stunned);
+
+	UFUNCTION()
+	void AttackRangeSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	  int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void AttackRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
 private:
 	
@@ -78,9 +97,28 @@ private:
 	class UBehaviorTree* BehaviorTree;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="My Stuff", meta=(AllowPrivateAccess="true", MakeEditWidget="true"))
 	FVector PatrolPoint;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category="My Stuff", meta=(AllowPrivateAccess="true", MakeEditWidget="true"))
+	FVector PatrolPoint2;
 	UPROPERTY(VisibleAnywhere, Category="My Stuff", meta=(AllowPrivateAccess="true"))
 	class AEnemyController* EnemyController;
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	class USphereComponent* AgroSphere;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	bool bStunned;
+	// Percentage stun chance - 0 = no chance, 1 = 100% chance of being stunned
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	float StunnedChance;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	bool bInAttackRange;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	USphereComponent* AttackRangeSphere;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	UAnimMontage* AttackMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	FName Attack1;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	FName Attack2;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
