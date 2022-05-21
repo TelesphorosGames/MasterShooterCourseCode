@@ -23,7 +23,12 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
 	class USoundCue* ImpactSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	UStaticMeshComponent* ExplosiveMesh;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	class USphereComponent* ExplosiveRangeSphere;
 
 protected:
 	// Called when the game starts or when spawned
@@ -33,8 +38,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void BulletHit_Implementation(FHitResult HitResult) override;
+	virtual void BulletHit_Implementation(FHitResult HitResult, AActor* Shooter, AController* ShooterController) override;
 	
-	
-
 };

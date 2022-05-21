@@ -61,7 +61,12 @@ AMainCharacter::AMainCharacter() :
 	HighlightedSlot(-1),
 	WeaponInExchange(nullptr),
 	Health(100.f),
-	MaxHealth(100.f)
+	MaxHealth(100.f),
+StunChance(.5f),
+CanPlayCharacterDamagedSound(true),
+CharacterDamagedSoundInterval(.2f),
+bCharacterDead(false)
+
 
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -243,7 +248,6 @@ void AMainCharacter::GetPickupItem(AItem* Item)
 
 FRotator AMainCharacter::GetLookAtRotationYaw(FVector Target) const
 {
-	// Using UKismetMathLibrary's 
 	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Target);
 	const FRotator LookAtRotationYaw = {0.f, LookAtRotation.Yaw, 0.f};
 	return LookAtRotationYaw;
@@ -251,6 +255,7 @@ FRotator AMainCharacter::GetLookAtRotationYaw(FVector Target) const
 
 void AMainCharacter::MoveForward(float Value)
 {
+	if(CombatState==ECombatState::ECS_Stunned||bCharacterDead) return;
 	if (Controller != nullptr)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -262,6 +267,7 @@ void AMainCharacter::MoveForward(float Value)
 
 void AMainCharacter::MoveRight(float Value)
 {
+	if(CombatState==ECombatState::ECS_Stunned||bCharacterDead) return;
 	if (Controller != nullptr)
 	{
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -275,6 +281,10 @@ void AMainCharacter::MoveRight(float Value)
 
 void AMainCharacter::TurnAtRate(float Rate)
 {
+	if(bCharacterDead)
+	{
+		GetCharacterMovement()->bUseControllerDesiredRotation=false;
+	}
 	float ClampedRate = FMath::Clamp(Rate, -1, 1);
 	if (!bAiming)
 	{
@@ -288,6 +298,7 @@ void AMainCharacter::TurnAtRate(float Rate)
 
 void AMainCharacter::LookUpAtRate(float Rate)
 {
+	
 	float ClampedRate = FMath::Clamp(Rate, -1, 1);
 	if (!bAiming)
 	{
@@ -301,6 +312,7 @@ void AMainCharacter::LookUpAtRate(float Rate)
 
 void AMainCharacter::Jump()
 {
+	if(bCharacterDead) return;
 	if (bCrouching)
 	{
 		bCrouching = false;
@@ -323,6 +335,7 @@ void AMainCharacter::StopJumping()
 
 void AMainCharacter::AdjustCameraLengthUp()
 {
+	
 	if (!CameraBoom || CameraBoom->TargetArmLength <= 60.f) return;
 		
 	CameraBoom->TargetArmLength -= 30.f;
@@ -355,6 +368,51 @@ void AMainCharacter::IncrementOverlappedItemCount(int8 Amount)
 		OverlappedItemCount += Amount;
 		bShouldTraceForItems = true;
 	}
+}
+
+void AMainCharacter::PlayCharacterDamagedSound()
+{
+	if(CharacterDamagedSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, GetCharacterDamagedSound(), GetActorLocation());
+	}
+	CanPlayCharacterDamagedSound=true;
+	
+}
+
+void AMainCharacter::CharacterDeath()
+{
+	if(bCharacterDead) return; 
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance&&CharacterDeathMontage)
+	{
+		if(AnimInstance->Montage_IsPlaying(HitReactMontage))
+		{
+			AnimInstance->Montage_Pause(HitReactMontage);
+		}
+		
+		AnimInstance->Montage_Play(CharacterDeathMontage,1);
+		AnimInstance->Montage_JumpToSection(FName("Death"), CharacterDeathMontage);
+	}
+	
+	bCharacterDead = true;
+}
+
+void AMainCharacter::CharacterEndDeath()
+{
+	GetMesh()->bPauseAnims=true;
+	
+	
+}
+
+void AMainCharacter::StartCharacterDamagedSoundTimer()
+{
+	
+	if(CanPlayCharacterDamagedSound && !bCharacterDead)
+	{
+		GetWorldTimerManager().SetTimer(CharacterDamagedSoundTimer, this, &AMainCharacter::PlayCharacterDamagedSound, CharacterDamagedSoundInterval); 
+	}
+	CanPlayCharacterDamagedSound=false;
 }
 
 void AMainCharacter::PlayGunFireSound()
@@ -394,7 +452,7 @@ void AMainCharacter::FireOneBullet()
 				IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.GetActor());
 				if(BulletHitInterface)
 				{
-					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+					BulletHitInterface->BulletHit_Implementation(BeamHitResult, this, GetController());
 				}
 				AEnemy* HitEnemy = Cast<AEnemy>(BeamHitResult.GetActor());
 				if(HitEnemy)
@@ -424,8 +482,6 @@ void AMainCharacter::FireOneBullet()
 			}
 			else
 			{
-				
-					
 				
 			}
 				if (ImpactParticles)
@@ -566,6 +622,9 @@ float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	if(Health-DamageAmount<=0.f)
 	{
 		Health = 0.f;
+		
+		CharacterDeath();
+		
 	}
 	else
 	{
@@ -577,7 +636,7 @@ float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 void AMainCharacter::AimingButtonPressed()
 {
 	bAimingButtonPressed = true;
-	if (CombatState != ECombatState::ECS_ReloadingState && CombatState != ECombatState::ECS_PickingUpWeapon)
+	if (CombatState != ECombatState::ECS_ReloadingState && CombatState != ECombatState::ECS_PickingUpWeapon && CombatState != ECombatState::ECS_Stunned)
 	{
 		Aim();
 	}
@@ -719,7 +778,7 @@ void AMainCharacter::CalculateCrosshairSpread(float DeltaTime)
 
 	if (bAiming)
 	{
-		CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, .75f, DeltaTime, 10.f);
+		CrosshairAimFactor = FMath::FInterpTo(CrosshairAimFactor, .75f, DeltaTime, 1.5f);
 	}
 	else
 	{
@@ -737,14 +796,14 @@ void AMainCharacter::CalculateCrosshairSpread(float DeltaTime)
 
 	if(bCrouching)
 	{
-		CrosshairCrouchingFactor = FMath::FInterpTo(CrosshairCrouchingFactor, 1.f, DeltaTime, 10.f);
+		CrosshairCrouchingFactor = FMath::FInterpTo(CrosshairCrouchingFactor, 1.f, DeltaTime, 5.f);
 	}
 	else
 	{
 		CrosshairCrouchingFactor = FMath::FInterpTo(CrosshairCrouchingFactor, 0.f, DeltaTime, 10.f);
 	}
 
-	CrosshairSpreadMultiplier = 1.f + CrosshairVelocityFactor/1.5  + CrosshairInAirFactor - CrosshairAimFactor +
+	CrosshairSpreadMultiplier = 1.5f + CrosshairVelocityFactor/1.5  + CrosshairInAirFactor - CrosshairAimFactor/2 +
 		CrosshairShootingFactor - CrosshairCrouchingFactor/2 ;
 }
 
@@ -1111,6 +1170,7 @@ bool AMainCharacter::CarryingAmmo()
 
 void AMainCharacter::FinishReloading()
 {
+	if(CombatState==ECombatState::ECS_Stunned) return;
 	if (EquippedWeapon == nullptr)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Equipped weapon is null here bro"));
@@ -1157,6 +1217,7 @@ void AMainCharacter::FinishReloading()
 
 void AMainCharacter::FinishEquipping()
 {
+	if(CombatState==ECombatState::ECS_Stunned) return;
 	CombatState = ECombatState::ECS_Unoccupied;
 	if(bAimingButtonPressed)
 	{
@@ -1323,6 +1384,54 @@ EPhysicalSurface AMainCharacter::GetSurfaceType()
 	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 }
 
+void AMainCharacter::EndStun()
+{
+
+	CombatState = ECombatState::ECS_Unoccupied;
+
+	if(bAimingButtonPressed)
+	{
+		Aim();
+	}
+}
+
+void AMainCharacter::PlayHitReact()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(AnimInstance&&HitReactMontage&&!bCharacterDead)
+	{
+		AnimInstance->Montage_Play(HitReactMontage, 1);
+		int32 Section = FMath::RandRange(0,4);
+		switch(Section)
+		{
+		case 0:
+			AnimInstance->Montage_JumpToSection(FName("HitReactBack"));
+			break;
+		case 1:
+			AnimInstance->Montage_JumpToSection(FName("HitReactFront"));
+			break;
+		case 2:
+			AnimInstance->Montage_JumpToSection(FName("HitReactLeft"));
+			break;
+		case 3:
+			AnimInstance->Montage_JumpToSection(FName("HitReactRight"));
+			break;
+	
+		default:
+			;
+		}
+
+		
+		
+	}
+	else if(AnimInstance&&CharacterDeathMontage&&bCharacterDead)
+	{
+		AnimInstance->Montage_Play(CharacterDeathMontage,1);
+		AnimInstance->Montage_JumpToSection(FName("Death"), CharacterDeathMontage);
+	}
+}
+
 void AMainCharacter::HighlightInventorySlot()
 {
 	const int32 EmptySlot = GetEmptyInventorySlot();
@@ -1335,6 +1444,22 @@ void AMainCharacter::UnHighlightInventorySlot()
 {
 	HighlightIconDelegate.Broadcast(HighlightedSlot, false);
 	HighlightedSlot = -1;
+}
+
+void AMainCharacter::Stun()
+{
+	if(bCharacterDead)return;
+	CombatState=ECombatState::ECS_Stunned;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && HitReactMontage )
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+		AnimInstance->Montage_JumpToSection(FName("HitReactFront"));
+	}
+
+
+	
 }
 
 void AMainCharacter::FireButtonPressed()
@@ -1361,6 +1486,9 @@ void AMainCharacter::StartFireTimer()
 
 void AMainCharacter::AutoFireReset()
 {
+
+	if(CombatState==ECombatState::ECS_Stunned) return;
+	
 	CombatState = ECombatState::ECS_Unoccupied;
 
 	if (EquippedWeapon && WeaponHasAmmo())

@@ -5,6 +5,13 @@
 
 #include "Enemy.h"
 
+URomeroAnimInstance::URomeroAnimInstance():
+bDead(false),
+LocomotionBlendWeight(.85f)
+{
+	
+}
+
 void URomeroAnimInstance::UpdateAnimationProperties(float DeltaTime)
 {
 	if(Enemy == nullptr)
@@ -18,7 +25,20 @@ void URomeroAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		Velocity.Z = 0.f;
 		Speed=Velocity.Size();
 
-		
-		
+		bCrawling=Enemy->GetCrawling();
+		bDead=Enemy->GetDead();
+		if(bDead)
+		{
+			LocomotionBlendWeight = 0.f;
+			return;
+		}
+		if(Enemy->GetAttacking())
+		{
+			LocomotionBlendWeight=.15f;
+		}
+		else if (Enemy->GetAttacking() == false)
+		{
+			LocomotionBlendWeight = .85f;
+		}
 	}
 }

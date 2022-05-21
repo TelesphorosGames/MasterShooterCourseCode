@@ -12,9 +12,9 @@ AWeapon::AWeapon():
 	AmmoType(EAmmoType::EAT_Pistol),
 	ReloadMontageSection(FName(TEXT("Reload_SMG"))),
 	ClipBoneName(TEXT("smg_clip")),
+	SlideDisplacementTime(.15f),
 	bMovingSlide(false),
 	MaxSlideDisplacement(3.f),
-	SlideDisplacementTime(.15f),
 	MaxRecoilRotation(4.f),
 	bAutomatic(true)
 

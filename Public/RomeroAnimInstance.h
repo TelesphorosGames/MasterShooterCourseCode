@@ -16,9 +16,13 @@ class MASTERSHOOTERCOURSE_API URomeroAnimInstance : public UAnimInstance
 
 public:
 
+	URomeroAnimInstance();
+
 	UFUNCTION(BlueprintCallable)
 	void UpdateAnimationProperties(float DeltaTime);
-
+	
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	float LocomotionBlendWeight;
 
 private:
 
@@ -26,4 +30,9 @@ private:
 	float Speed;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess="true"))
 	class AEnemy* Enemy;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	bool bCrawling;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	bool bDead;
+	
 };

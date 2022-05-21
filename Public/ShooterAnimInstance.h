@@ -134,6 +134,9 @@ private:
 	EWeaponType EquippedWeaponType;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite,  Category= "My Stuff | Combat", meta = (AllowPrivateAccess = true))
-	bool bShouldUseFabrik; 
+	bool bShouldUseFabrik;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category= "My Stuff | Movement", meta = (AllowPrivateAccess=true))
+	bool bCharIsDead;
 	
 };

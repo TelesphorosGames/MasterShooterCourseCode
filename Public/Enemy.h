@@ -16,8 +16,11 @@ public:
 	// Sets default values for this character's properties
 	AEnemy();
 
-	FORCEINLINE FString GetHeadBone() const {return HeadBone ; }
-	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const {return BehaviorTree; }
+	FORCEINLINE FString GetHeadBone() const {return HeadBone;}
+	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const {return BehaviorTree;}
+	FORCEINLINE bool GetCrawling() const {return bCrawling;}
+	FORCEINLINE bool GetDead() const {return bDead;}
+	FORCEINLINE bool GetAttacking() const {return bAttacking; }
 	
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitNumber(int32 Damage, FVector HitLocation, bool bHeadShot);
@@ -64,7 +67,8 @@ protected:
 	
 	UFUNCTION()
 	void AttackRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	
+	void DoDamage(AActor* Victim);
+
 	UFUNCTION()
 	void OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	  int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -80,9 +84,11 @@ protected:
 	void ActivateRightWeapon();
 	UFUNCTION(BlueprintCallable)
 	void DeactivateRightWeapon();
-	
-	
-	
+
+
+	void StunCharacterAttempt(class AMainCharacter* Victim);
+	UFUNCTION(BlueprintCallable)
+	void StopAttacking();
 private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
@@ -105,6 +111,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
 	UAnimMontage* HitMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	UAnimMontage* DeathMontage;
 
 	// Map that stores hit number widgets and their corresponding hit locations ( FOR PROJECTING TO SCREEN )
 	UPROPERTY(VisibleAnywhere, Category="My Stuff", meta=(AllowPrivateAccess="true"))
@@ -143,6 +152,12 @@ private:
 	UBoxComponent* RightWeaponCollision;
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
 	float BaseDamage;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	bool bCrawling;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	bool bDead;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	bool bAttacking;
 
 
 	
@@ -152,7 +167,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	virtual void BulletHit_Implementation(FHitResult HitResult) override;
+	virtual void BulletHit_Implementation(FHitResult HitResult, AActor* Shooter, AController* ShooterController) override;
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	

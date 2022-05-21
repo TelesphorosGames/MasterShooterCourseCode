@@ -19,7 +19,9 @@ enum class ECombatState : uint8
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
 	ECS_ReloadingState UMETA(DisplayName = "Reloading"),
 	ECS_PickingUpAmmo UMETA(DisplayName = "PickingUpAmmo"),
-	ECS_PickingUpWeapon UMETA(DisplayName ="PickingUpWeapon"),
+	ECS_PickingUpWeapon UMETA(DisplayName = "PickingUpWeapon"),
+	ECS_Stunned UMETA(DisplayName = "Stunned"),
+	
 
 	ECS_MAX UMETA(DisplayName = "DefaultMax"),
 };
@@ -30,7 +32,7 @@ enum class EMovementStatus : uint8
 	EMS_Idle UMETA(DisplayName = "Idle"),
 	EMS_Standing UMETA(DisplayName = "Standing"),
 	EMS_Sitting UMETA(DisplayName = "Sitting"),
-	EMS_Crouching UMETA(DisplayName= "Crouching"),
+	EMS_Crouching UMETA(DisplayName = "Crouching"),
 
 	EMS_MAX UMETA(DisplayName = "DefaultMax"),
 };
@@ -85,6 +87,10 @@ public:
 	FORCEINLINE bool GetCrouching() const {return bCrouching; }
 	FORCEINLINE class AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 	FORCEINLINE FVector2D GetCrosshairLocation() const {return CrosshairLocation; }
+	FORCEINLINE class USoundCue* GetCharacterDamagedSound() const {return CharacterDamagedSound; }
+	FORCEINLINE float GetStunChance() const {return StunChance; }
+	FORCEINLINE bool GetCharacterDead() const {return bCharacterDead; }
+
 	
 	FVector BeamEndPublic;
 
@@ -290,8 +296,27 @@ private:
 	float Health;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
 	float MaxHealth;
-	
 
+
+	FTimerHandle CharacterDamagedSoundTimer;
+	float CharacterDamagedSoundInterval;
+	bool CanPlayCharacterDamagedSound;
+	
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	class USoundCue* CharacterDamagedSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+		UAnimMontage* HitReactMontage;
+	
+	float StunChance;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "My Stuff | Combat", meta =(AllowPrivateAccess= "true"))
+	UAnimMontage* CharacterDeathMontage;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category= "My Stuff | Inventory", meta =(AllowPrivateAccess = true))
+	bool bCharacterDead;
+	
+	
 protected:
 	
 	void PlayGunFireSound();
@@ -392,10 +417,16 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	EPhysicalSurface GetSurfaceType();
+	UFUNCTION(BlueprintCallable)
+	void EndStun();
 
+	UFUNCTION()
+	void PlayCharacterDamagedSound();
 	
-	
+	void CharacterDeath();
 
+	UFUNCTION(BlueprintCallable)
+	void CharacterEndDeath();
 public:	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Camera")
@@ -446,4 +477,13 @@ public:
 	void HighlightInventorySlot();
 	
 	void UnHighlightInventorySlot();
+
+	void Stun();
+
+	void PlayHitReact();
+
+
+
+	void StartCharacterDamagedSoundTimer();
+	
 };

@@ -54,6 +54,8 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		bShouldUseFabrik = ShooterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied || ShooterCharacter->
 			GetCombatState() == ECombatState::ECS_FireTimerInProgress;
 
+		bCharIsDead = ShooterCharacter->GetCharacterDead();
+
 		//Get lateral Speed of Character from Velocity - speed from falling is not taken into account
 		FVector Velocity = ShooterCharacter->GetVelocity();
 		Velocity.Z = 0.f;
@@ -111,7 +113,11 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
 	{
 		EquippedWeaponType = ShooterCharacter->GetEquippedWeapon()->GetWeaponType();
 	}
-	AdjustAimOffset(UpdatedYaw, UpdatedPitch);
+	if(GEngine)
+	{
+		AdjustAimOffset(UpdatedYaw, UpdatedPitch);
+	}
+	
 	TurnInPlace();
 	Lean(DeltaTime);
 	SetRecoilAndReloadWeights();
@@ -128,6 +134,12 @@ void UShooterAnimInstance::NativeInitializeAnimation()
 
 void UShooterAnimInstance::SetRecoilAndReloadWeights()
 {
+	if(bCharIsDead)
+	{
+		ReloadWeight=1.f;
+		RecoilWeight=1.f;
+		return;
+	}
 	if (bTurningInPlace) /* TURNING IN PLACE  */
 	{
 		if (bReloading || bEquipping) // Turning in place, while reloading or equipping
@@ -276,7 +288,7 @@ void UShooterAnimInstance::AdjustAimOffset(const float InYaw,const float InPitch
 		if (GEngine && GEngine->GameViewport)
 		{
 			GEngine->GameViewport->GetViewportSize(ViewportSize);
-
+		}
 			float YScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.Y, 0, ViewportSize.Y);
 			float XScreenSpacePercent = UKismetMathLibrary::NormalizeToRange(BulletTarget2d.X, 0, ViewportSize.X);
 			
@@ -303,10 +315,10 @@ void UShooterAnimInstance::AdjustAimOffset(const float InYaw,const float InPitch
 					UpdatedYaw += FMath::Abs(.5f - XScreenSpacePercent) * 25;
 				}
 			}
-			if (UpdatedPitch > 180 || UpdatedPitch < -180) UpdatedPitch = InPitch;
-			if (UpdatedYaw > 200 || UpdatedYaw < -200) UpdatedYaw = InYaw;
+			
 
-
+		if (UpdatedPitch > 180 || UpdatedPitch < -180) UpdatedPitch = Pitch;
+		if (UpdatedYaw > 200 || UpdatedYaw < -200) UpdatedYaw = LastMovementOffsetYaw;
 
 
 
@@ -322,7 +334,7 @@ void UShooterAnimInstance::AdjustAimOffset(const float InYaw,const float InPitch
 			// OutPitch = CurrentPitchTarget;
 			// OutYaw = CurrentYawTarget;
 		}
-	}
+	
 }
 
 void UShooterAnimInstance::Lean(float DeltaTime)

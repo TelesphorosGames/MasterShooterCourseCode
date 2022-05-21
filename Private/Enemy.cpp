@@ -29,7 +29,9 @@ bStunned(false),
 StunnedChance(.5f),
 Attack1(TEXT("Attack1")),
 Attack2(TEXT("Attack2")),
-BaseDamage(5.f)
+BaseDamage(2.f),
+bCrawling(false),
+bDead(false)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -78,15 +80,20 @@ void AEnemy::BeginPlay()
 	RightWeaponCollision->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnRightWeaponOverlap);
 	LeftWeaponCollision->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnLeftWeaponOverlap);
 
-	LeftWeaponCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	LeftWeaponCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	LeftWeaponCollision->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	LeftWeaponCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	LeftWeaponCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 	
-	RightWeaponCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	RightWeaponCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	RightWeaponCollision->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	RightWeaponCollision->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	RightWeaponCollision->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+
+	
+	
+		GetCharacterMovement()->MaxWalkSpeed=FMath::RandRange(20,950);
+	
 	
 }
 
@@ -99,6 +106,8 @@ void AEnemy::ShowHealthBar_Implementation()
 void AEnemy::EnemyDeath()
 {
 	HideHealthBar();
+	Destroy();
+	
 }
 
 void AEnemy::PlayHitMontage(FName Section, float PlayRate)
@@ -113,11 +122,13 @@ void AEnemy::PlayHitMontage(FName Section, float PlayRate)
 
 void AEnemy::PlayAttackMontage(FName Section, float PlayRate)
 {
+	bAttacking=true;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if(AnimInstance)
 	{
 		AnimInstance->Montage_Play(AttackMontage, PlayRate);
 		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
+		
 	}
 }
 
@@ -187,10 +198,8 @@ void AEnemy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 		
 		AMainCharacter* Character = Cast<AMainCharacter>(OtherActor);
 		if(Character)
-		{
-			
-			EnemyController->GetMyBlackboardComponent()->SetValueAsObject(TEXT("Target"), Character);
-			
+		{			
+				EnemyController->GetMyBlackboardComponent()->SetValueAsObject(TEXT("Target"), Character);
 		}
 	}
 }
@@ -246,36 +255,38 @@ void AEnemy::AttackRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 	
 }
 
-void AEnemy::OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AEnemy::DoDamage(AActor* Victim)
 {
-	if(OtherActor)
+	if(Victim)
 	{
-		AMainCharacter* Char = Cast<AMainCharacter>(OtherActor);
+		AMainCharacter* Char = Cast<AMainCharacter>(Victim);
 		
 		if(Char)
 		{
 			UGameplayStatics::ApplyDamage(Char, BaseDamage, EnemyController, this, UDamageType::StaticClass());
 			
 			UE_LOG(LogTemp,Warning,TEXT("BOOM!"));
+			if(Char->GetCharacterDamagedSound())
+			{
+				Char->StartCharacterDamagedSoundTimer();
+			}
+
+			StunCharacterAttempt(Char);
+			
 		}
 	}
-	
+}
+
+void AEnemy::OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+                                 UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	DoDamage(OtherActor);
 }
 
 void AEnemy::OnRightWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+                                  UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if(OtherActor)
-	{
-		AMainCharacter* Char = Cast<AMainCharacter>(OtherActor);
-		
-		if(Char)
-		{
-			UE_LOG(LogTemp,Warning,TEXT("BOOM!"));
-			UGameplayStatics::ApplyDamage(Char, BaseDamage, EnemyController, this, UDamageType::StaticClass());
-		}
-	}
+	DoDamage(OtherActor);
 }
 
 void AEnemy::ActivateLeftWeapon()
@@ -298,6 +309,26 @@ void AEnemy::DeactivateRightWeapon()
 	RightWeaponCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
+
+
+void AEnemy::StunCharacterAttempt(AMainCharacter* Victim)
+{
+	if(Victim)
+	{
+		Victim->PlayHitReact();
+		const float Stun = FMath::FRandRange(0.f,1.f);
+		if(Stun<=Victim->GetStunChance())
+		{
+			Victim->Stun();
+		}
+	}
+}
+
+void AEnemy::StopAttacking()
+{
+	bAttacking=false;
+}
+
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
@@ -314,7 +345,7 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-void AEnemy::BulletHit_Implementation(FHitResult HitResult)
+void AEnemy::BulletHit_Implementation(FHitResult HitResult, AActor* Shooter, AController* ShooterController)
 {
 	if(ImpactSound)
 	{
@@ -324,20 +355,7 @@ void AEnemy::BulletHit_Implementation(FHitResult HitResult)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, HitResult.Location, FRotator(0.f), true);
 	}
-	ShowHealthBar();
-
-	const float Stunned = FMath::FRandRange(0.f, 1.f);
-
-	if(Stunned<StunnedChance)
-	{
-		SetStunned(true);
-		PlayHitMontage(FName("HitReact2"));
-		
-	}
-	else
-	{
-		PlayHitMontage(FName("HitReact1"));
-	}
+	
 
 	
 	
@@ -351,13 +369,92 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 		Health=0.f;
 		GetCharacterMovement()->MaxWalkSpeed=0.f;
 		GetWorldTimerManager().ClearTimer(HealthBarTimer);
-		GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AEnemy::EnemyDeath, HealthBarDisplayTime);
+		GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AEnemy::EnemyDeath, 30.f);
+		bDead=true;
+
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if(AnimInstance && DeathMontage)
+		{
+			int32 Section = FMath::RandRange(0,2);
+			switch(Section)
+			{
+			case 0:
+				AnimInstance->Montage_Play(DeathMontage, 1);
+				AnimInstance->Montage_JumpToSection(FName("Death1"), DeathMontage);
+				break;
+			case 1:
+				AnimInstance->Montage_Play(DeathMontage, 1);
+				AnimInstance->Montage_JumpToSection(FName("Death2"), DeathMontage);
+				break;
+			case 2:
+				AnimInstance->Montage_Play(DeathMontage, 1);
+				AnimInstance->Montage_JumpToSection(FName("Death3"), DeathMontage);
+				break;
+					
+			default:;
+				
+			}
+			
+		
+		}
+		
+		EnemyController->StopMovement();
+		EnemyController->GetMyBlackboardComponent()->SetValueAsBool(FName("Dead"), true);
+	
 	}
 	else
 	{
+		if(!EnemyController || bDead) return 0.f;
+		EnemyController->GetMyBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
 		Health-=DamageAmount;
+
+		ShowHealthBar();
+
+		const float Stunned = FMath::FRandRange(0.f, 1.f);
+
+		if(Stunned<StunnedChance)
+		{
+			SetStunned(true);
+			PlayHitMontage(FName("HitReact2"));
 		
+		}
+		else
+		{
+			PlayHitMontage(FName("HitReact1"));
+		}
+		
+		const int32 RandWalkSpeedVariation = FMath::RandRange(10,150);
+		const float WalkSpeedChangeChance = FMath::FRandRange(0,1.f);
+
+		if(WalkSpeedChangeChance<=.8f)
+		{
+			GetCharacterMovement()->MaxWalkSpeed += RandWalkSpeedVariation;
+		}
+		else
+		{
+			GetCharacterMovement()->MaxWalkSpeed -= RandWalkSpeedVariation;
+		}
+		
+
+		
+		if(Health<=30.f && !bDead)
+        	{
+				if(!bCrawling)
+				{
+					GetCharacterMovement()->MaxWalkSpeed=FMath::RandRange(0,400);
+					
+				}
+			if(GetCharacterMovement()->MaxWalkSpeed>=50.f)
+			{
+				GetCharacterMovement()->MaxWalkSpeed -= FMath::RandRange(10, 50);
+			}
+        		
+        		bCrawling=true;
+        	}
 	}
+
+	
+	
 		return DamageAmount;
 	
 }
