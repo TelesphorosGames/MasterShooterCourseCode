@@ -34,7 +34,7 @@ void URomeroAnimInstance::UpdateAnimationProperties(float DeltaTime)
 		}
 		if(Enemy->GetAttacking())
 		{
-			LocomotionBlendWeight=.15f;
+			LocomotionBlendWeight=1.f;
 		}
 		else if (Enemy->GetAttacking() == false)
 		{

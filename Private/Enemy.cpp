@@ -134,8 +134,9 @@ void AEnemy::PlayAttackMontage(FName Section, float PlayRate)
 
 FName AEnemy::GetAttackSectionName()
 {
+	
 	FName SectionName;
-	const int32 Section = FMath::RandRange(0,1);
+	const int32 Section = FMath::RandRange(0,2);
 	switch(Section)
 	{
 	case 0:
@@ -145,6 +146,8 @@ FName AEnemy::GetAttackSectionName()
 	case 1:
 		SectionName= Attack2;
 	break;
+	case 2:
+		SectionName=FName("Zombie_Bite");
 
 	default: ;
 	}
@@ -313,7 +316,7 @@ void AEnemy::DeactivateRightWeapon()
 
 void AEnemy::StunCharacterAttempt(AMainCharacter* Victim)
 {
-	if(Victim)
+	if(Victim && !Victim->GetCharacterDead())
 	{
 		Victim->PlayHitReact();
 		const float Stun = FMath::FRandRange(0.f,1.f);
@@ -327,6 +330,16 @@ void AEnemy::StunCharacterAttempt(AMainCharacter* Victim)
 void AEnemy::StopAttacking()
 {
 	bAttacking=false;
+}
+
+void AEnemy::StartEnemyRespawnTimer()
+{
+	GetWorldTimerManager().SetTimer(EnemyRespawnTimer, this, &AEnemy::SpawnEnemy, EnemyRespawnTime);
+}
+
+void AEnemy::SpawnEnemy()
+{
+	
 }
 
 // Called every frame

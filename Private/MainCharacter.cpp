@@ -382,26 +382,20 @@ void AMainCharacter::PlayCharacterDamagedSound()
 
 void AMainCharacter::CharacterDeath()
 {
-	if(bCharacterDead) return; 
+	bCharacterDead = true;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if(AnimInstance&&CharacterDeathMontage)
 	{
-		if(AnimInstance->Montage_IsPlaying(HitReactMontage))
-		{
-			AnimInstance->Montage_Pause(HitReactMontage);
-		}
-		
 		AnimInstance->Montage_Play(CharacterDeathMontage,1);
 		AnimInstance->Montage_JumpToSection(FName("Death"), CharacterDeathMontage);
 	}
 	
-	bCharacterDead = true;
+
 }
 
 void AMainCharacter::CharacterEndDeath()
 {
 	GetMesh()->bPauseAnims=true;
-	
 	
 }
 
@@ -554,7 +548,7 @@ void AMainCharacter::AttachWeaponToSocket(AWeapon* Weapon)
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AMainCharacter::FireWeapon()
 {
-	if (EquippedWeapon == nullptr) return;
+	if (EquippedWeapon == nullptr || bCharacterDead) return;
 	if (CombatState != ECombatState::ECS_Unoccupied) return;
 
 	if (WeaponHasAmmo())
@@ -622,9 +616,11 @@ float AMainCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	if(Health-DamageAmount<=0.f)
 	{
 		Health = 0.f;
-		
-		CharacterDeath();
-		
+		if(!bCharacterDead)
+			{
+			
+			CharacterDeath();
+			}
 	}
 	else
 	{
@@ -1475,7 +1471,7 @@ void AMainCharacter::FireButtonReleased()
 
 void AMainCharacter::StartFireTimer()
 {
-	if (!EquippedWeapon)return;
+	if (!EquippedWeapon || bCharacterDead )return;
 	CombatState = ECombatState::ECS_FireTimerInProgress;
 
 	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AMainCharacter::AutoFireReset,

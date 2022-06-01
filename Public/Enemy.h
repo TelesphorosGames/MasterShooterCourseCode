@@ -89,6 +89,12 @@ protected:
 	void StunCharacterAttempt(class AMainCharacter* Victim);
 	UFUNCTION(BlueprintCallable)
 	void StopAttacking();
+
+	UFUNCTION()
+	void StartEnemyRespawnTimer();
+
+	UFUNCTION()
+	void SpawnEnemy();
 private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
@@ -159,7 +165,11 @@ private:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
 	bool bAttacking;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="My Stuff", meta=(AllowPrivateAccess="true"))
+	float EnemyRespawnTime;
+	FTimerHandle EnemyRespawnTimer;
 
+	
 	
 public:	
 	// Called every frame
